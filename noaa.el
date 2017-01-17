@@ -87,9 +87,9 @@
   (noaa-url-retrieve-tkf-emacs-request url))
 
 ;; async version relying on tfk emacs-request library
-(defun noaa-url-retrieve-tkf-emacs-request (&optional url)
+(defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback)
   (interactive)
-  (request (noaa-url noaa-latitude noaa-longitude)
+  (request (or url (noaa-url noaa-latitude noaa-longitude))
 	   :parser 'buffer-string ;'json-read
 	   :error (function*
 		   (lambda (&key data error-thrown response symbol-status &allow-other-keys)
@@ -98,7 +98,7 @@
 		     (message "E Error response: %S " error-thrown)
 		     (message "response: %S " response)))
 	   :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the NOAA server seems to be unhappy"))))
-	   :success 'http-callback))
+	   :success (or http-callback 'http-callback)))
 
 (cl-defun http-callback (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
@@ -114,9 +114,9 @@
 	     ;(guessed-mode (assoc-default ctype-name http-content-type-mode-alist))
 	     ;(pretty-callback (assoc-default ctype-name http-pretty-callback-alist))
 	     )
-	;(message "Setting noaa-result")
-	;(setq noaa-result data)
-	;(message "Done setting noaa-result")
+	;; (message "Setting noaa-result")
+	;; (setq noaa-result data)
+	;; (message "Done setting noaa-result")
 	;(noaa-insert data)
 	;(message "1234")
 	
@@ -141,8 +141,8 @@
       ;(http-response-mode)
       )
     (goto-char (point-min))
-    (let ((result (json-read)))
-      ;(message "Got result %S " result)
+    (let ((result (json-read-from-string data)))
+      ;; (message "Got result %S " result)
       ;(setq noaa-result result)
       ;(message "Done setting result")
       (noaa-handle-noaa-result result)
@@ -150,6 +150,14 @@
       )
     ;(display-buffer noaa-buffer)
     ))
+
+(cl-defun http-callback--simple (&key data response error-thrown &allow-other-keys)
+  (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
+    (switch-to-buffer noaa-buffer)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (and error-thrown (message (error-message-string error-thrown)))
+      (noaa-insert data))))
 
 (defun noaa-parse-json-in-buffer ()
   "Parse and return the JSON object present in the noaa.el buffer."
