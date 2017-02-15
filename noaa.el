@@ -28,7 +28,10 @@
 
 (defun noaa ()
   (interactive)
-  (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude)))
+  (if (and (numberp noaa-latitude)
+	   (numberp noaa-longitude))
+      (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude))
+      (message "To use NOAA, first set NOAA-LATITUDE and NOAA-LONGITUDE.")))
 
 (defun noaa-aval (alist key)
   (let ((pair (assoc key alist)))
@@ -110,46 +113,11 @@
 	     (ctype-list (and ctype-header (rfc2231-parse-string ctype-header)))
 	     (charset (cdr (assq 'charset (cdr ctype-list))))
 	     (coding-system (and charset (intern (downcase charset))))
-	     (ctype-name (car ctype-list))
-	     ;(guessed-mode (assoc-default ctype-name http-content-type-mode-alist))
-	     ;(pretty-callback (assoc-default ctype-name http-pretty-callback-alist))
-	     )
-	;; (message "Setting noaa-result")
-	;; (setq noaa-result data)
-	;; (message "Done setting noaa-result")
-	;(noaa-insert data)
-	;(message "1234")
-	
-	;; (when (stringp data)
-	;;   (setq data (decode-coding-string data (or coding-system 'utf-8)))
-	;;   (let ((text data)
-	;; 	 ;(fontified (http-fontify-text text guessed-mode))
-	;; 	 )
-	;;     (insert text)))
-	)
-      ;; (when http-show-response-headers
-      ;; 	(goto-char (if http-show-response-headers-top (point-min) (point-max)))
-      ;; 	(or http-show-response-headers-top (insert "\n"))
-      ;; 	(let ((hstart (point))
-      ;; 	      (raw-header (request-response--raw-header response)))
-      ;; 	  (unless (string-empty-p raw-header)
-      ;; 	    (insert raw-header)
-      ;; 	    (let ((comment-start (or comment-start http-fallback-comment-start)))
-      ;; 	      (comment-region hstart (point)))
-      ;; 	    (put-text-property hstart (point) 'face 'font-lock-comment-face))))
-
-      ;(http-response-mode)
-      )
+	     (ctype-name (car ctype-list)))))
     (goto-char (point-min))
     (let ((result (json-read-from-string data)))
-      ;; (message "Got result %S " result)
-      ;(setq noaa-result result)
-      ;(message "Done setting result")
       (noaa-handle-noaa-result result)
-      (noaa-mode)
-      )
-    ;(display-buffer noaa-buffer)
-    ))
+      (noaa-mode))))
 
 (cl-defun http-callback--simple (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
@@ -167,7 +135,6 @@
 (defun noaa-insert (x)
   (switch-to-buffer noaa-buffer-spec)
   (insert x))
-
 
 ;;
 ;; noaa mode
