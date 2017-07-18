@@ -6,7 +6,7 @@
 ;; Keywords:
 ;; Homepage: https://github.com/thomp/noaa.el
 ;; URL: https://github.com/thomp/noaa.el
-;; Package-Requires: ((request) (cl-lib) (emacs "24")) 
+;; Package-Requires: ((request "0.2.0") (cl-lib "0.5") (emacs "24"))
 
 ;;; Commentary:
 
@@ -103,10 +103,10 @@
 		     (message "E Error response: %S " error-thrown)
 		     (message "response: %S " response)))
 	   :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the NOAA server seems to be unhappy"))))
-	   :success (or http-callback 'http-callback)))
+	   :success (or http-callback 'noaa-http-callback)))
 
 ;; forecast-http-callback
-(cl-defun http-callback (&key data response error-thrown &allow-other-keys)
+(cl-defun noaa-http-callback (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
     (switch-to-buffer noaa-buffer)
     (let ((inhibit-read-only t))
@@ -122,7 +122,7 @@
       (noaa-handle-noaa-result result)
       (noaa-mode))))
 
-(cl-defun http-callback--simple (&key data response error-thrown &allow-other-keys)
+(cl-defun noaa-http-callback--simple (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
     (switch-to-buffer noaa-buffer)
     (let ((inhibit-read-only t))
@@ -155,4 +155,5 @@
 
 (define-key noaa-mode-map (kbd "q") 'noaa-quit)
 
+(provide 'noaa)
 ;;; noaa.el ends here
