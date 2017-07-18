@@ -3,9 +3,10 @@
 ;; Copyright (C) 2017 David Thompson
 ;; Author: David Thompson
 ;; Version: 0.1
-;; Keywords: NOAA, weather, HTTP
-;; URL: https://github.com/thomp/************************
-;; Package-Requires: ((request "0.2.0") (cl-lib "0.5") (emacs "24")) 
+;; Keywords:
+;; Homepage: https://github.com/thomp/noaa.el
+;; URL: https://github.com/thomp/noaa.el
+;; Package-Requires: ((request) (cl-lib) (emacs "24")) 
 
 ;;; Commentary:
 
@@ -26,6 +27,7 @@
 (defvar noaa-buffer-spec "*noaa.el*"
   "Buffer or buffer name.")
 
+;; noaa-forecast (vs noaa-current)
 (defun noaa ()
   (interactive)
   (if (and (numberp noaa-latitude)
@@ -42,7 +44,7 @@
 (defun noaa-handle-noaa-result (result)
   (switch-to-buffer noaa-buffer-spec)
   ;; retrieve-fn accepts two arguments: a key-value store and a key
-  ;; retireve-fn returns the corresponding value
+  ;; retrieve-fn returns the corresponding value
   (let ((retrieve-fn 'noaa-aval))
     (let ((properties (funcall retrieve-fn result 'properties)))
       (if (not properties)
@@ -85,9 +87,9 @@
   "Return a string representing a URL."
   (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude)))
 
-(defun noaa-url-retrieve (url)
+(defun noaa-url-retrieve (url &optional http-callback)
   "Return the buffer containing only the 'raw' body of the HTTP response. Call CALLBACK with the buffer as a single argument."
-  (noaa-url-retrieve-tkf-emacs-request url))
+  (noaa-url-retrieve-tkf-emacs-request url http-callback))
 
 ;; async version relying on tfk emacs-request library
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback)
@@ -103,6 +105,7 @@
 	   :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the NOAA server seems to be unhappy"))))
 	   :success (or http-callback 'http-callback)))
 
+;; forecast-http-callback
 (cl-defun http-callback (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
     (switch-to-buffer noaa-buffer)
@@ -151,3 +154,5 @@
   "Keymap for `noaa-mode'.")
 
 (define-key noaa-mode-map (kbd "q") 'noaa-quit)
+
+;;; noaa.el ends here
