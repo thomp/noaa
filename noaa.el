@@ -4,8 +4,8 @@
 ;; Author: David Thompson
 ;; Version: 0.1
 ;; Keywords:
-;; Homepage: https://github.com/thomp/noaa.el
-;; URL: https://github.com/thomp/noaa.el
+;; Homepage: https://github.com/thomp/noaa
+;; URL: https://github.com/thomp/noaa
 ;; Package-Requires: ((request "0.2.0") (cl-lib "0.5") (emacs "24"))
 
 ;;; Commentary:
