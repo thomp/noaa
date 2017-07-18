@@ -29,6 +29,7 @@
 
 ;; noaa-forecast (vs noaa-current)
 (defun noaa ()
+  "Request weather forecast data. Display the data in the buffer specified by NOAA-BUFFER-SPEC."
   (interactive)
   (if (and (numberp noaa-latitude)
 	   (numberp noaa-longitude))
@@ -36,12 +37,14 @@
       (message "To use NOAA, first set NOAA-LATITUDE and NOAA-LONGITUDE.")))
 
 (defun noaa-aval (alist key)
+  "Utility function to retrieve value associated with key KEY in alist ALIST."
   (let ((pair (assoc key alist)))
     (if pair
 	(cdr pair)
       nil)))
 
 (defun noaa-handle-noaa-result (result)
+  "Handle the data described by RESULT (presumably the result of an HTTP request for NOAA forecast data)."
   (switch-to-buffer noaa-buffer-spec)
   ;; retrieve-fn accepts two arguments: a key-value store and a key
   ;; retrieve-fn returns the corresponding value
@@ -71,20 +74,22 @@
 			(insert (format "%s" temp))
 			(move-to-column (+ day-field-width temp-field-width) t)
 			(insert (format "%s" short-forecast))
-			(newline)) 
+			(newline))
 		 (setq last-day-number day-number)))))
 	 (beginning-of-buffer))))))
 
-;; utility function to handle ISO8601 times (emacs built-ins aren't there yet -- leaning on date is non-portable but works nicely for linux systems)
+;; emacs built-ins aren't there yet for handling ISO8601 values -- leaning on date is non-portable but works nicely for systems where date is available
 (defun noaa-iso8601-to-day (iso8601-string)
+  "Return a day value for the time specified by ISO8601-STRING."
   (elt (parse-time-string (shell-command-to-string (format "date -d %s --iso-8601=date" iso8601-string))) 3))
 
 (defun noaa-quit ()
+  "Leave the buffer specified by NOAA-BUFFER-SPEC."
   (interactive)
   (kill-buffer noaa-buffer-spec))
 
 (defun noaa-url (&optional latitude longitude)
-  "Return a string representing a URL."
+  "Return a string representing a URL. LATITUDE and LONGITUDE should be numbers."
   (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude)))
 
 (defun noaa-url-retrieve (url &optional http-callback)
@@ -136,6 +141,7 @@
   (json-read))
 
 (defun noaa-insert (x)
+  "Insert X into the buffer specified by NOAA-BUFFER-SPEC."
   (switch-to-buffer noaa-buffer-spec)
   (insert x))
 
