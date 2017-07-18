@@ -29,7 +29,7 @@
 
 ;; noaa-forecast (vs noaa-current)
 (defun noaa ()
-  "Request weather forecast data. Display the data in the buffer specified by NOAA-BUFFER-SPEC."
+  "Request weather forecast data. Display the data in the buffer specified by ‘noaa-buffer-spec’."
   (interactive)
   (if (and (numberp noaa-latitude)
 	   (numberp noaa-longitude))
@@ -84,7 +84,7 @@
   (elt (parse-time-string (shell-command-to-string (format "date -d %s --iso-8601=date" iso8601-string))) 3))
 
 (defun noaa-quit ()
-  "Leave the buffer specified by NOAA-BUFFER-SPEC."
+  "Leave the buffer specified by ‘noaa-buffer-spec’."
   (interactive)
   (kill-buffer noaa-buffer-spec))
 
@@ -93,7 +93,7 @@
   (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude)))
 
 (defun noaa-url-retrieve (url &optional http-callback)
-  "Return the buffer containing only the 'raw' body of the HTTP response. Call CALLBACK with the buffer as a single argument."
+  "Return the buffer containing only the 'raw' body of the HTTP response. Call HTTP-CALLBACK with the buffer as a single argument."
   (noaa-url-retrieve-tkf-emacs-request url http-callback))
 
 ;; async version relying on tfk emacs-request library
@@ -136,12 +136,12 @@
       (noaa-insert data))))
 
 (defun noaa-parse-json-in-buffer ()
-  "Parse and return the JSON object present in the noaa.el buffer."
+  "Parse and return the JSON object present in the buffer specified by ‘noaa-buffer-spec’."
   (switch-to-buffer noaa-buffer-spec)
   (json-read))
 
 (defun noaa-insert (x)
-  "Insert X into the buffer specified by NOAA-BUFFER-SPEC."
+  "Insert X into the buffer specified by ‘noaa-buffer-spec’."
   (switch-to-buffer noaa-buffer-spec)
   (insert x))
 
