@@ -15,7 +15,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'json)
 (require 'request)
 
@@ -56,8 +56,7 @@
 	      ;; LAST-DAY-NUMBER is used for aesthetics --> separate data by day
 	      (last-day-number -1)
 	      (day-field-width 16)
-	      (temp-field-width 5)
-	      (forecast-field-width 40))
+	      (temp-field-width 5))
 	 (erase-buffer)
 	 (dotimes (i (length periods))
 	   (let ((period (elt periods i)))
@@ -76,7 +75,7 @@
 			(insert (format "%s" short-forecast))
 			(newline))
 		 (setq last-day-number day-number)))))
-	 (beginning-of-buffer))))))
+	 (goto-char (point-min)))))))
 
 ;; emacs built-ins aren't there yet for handling ISO8601 values -- leaning on date is non-portable but works nicely for systems where date is available
 (defun noaa-iso8601-to-day (iso8601-string)
@@ -116,12 +115,7 @@
     (switch-to-buffer noaa-buffer)
     (let ((inhibit-read-only t))
       (erase-buffer)
-      (and error-thrown (message (error-message-string error-thrown)))
-      (let* ((ctype-header (request-response-header response "content-type"))
-	     (ctype-list (and ctype-header (rfc2231-parse-string ctype-header)))
-	     (charset (cdr (assq 'charset (cdr ctype-list))))
-	     (coding-system (and charset (intern (downcase charset))))
-	     (ctype-name (car ctype-list)))))
+      (and error-thrown (message (error-message-string error-thrown))))
     (goto-char (point-min))
     (let ((result (json-read-from-string data)))
       (noaa-handle-noaa-result result)
