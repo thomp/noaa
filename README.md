@@ -24,6 +24,6 @@ Ensure `noaa-latitude` and `noaa-longitude` are set to the desired values. For e
 
 ## Use
 
-1. <kbd>M-x</kbd> `ielm`
+1. Use <kbd>M-x</kbd> `noaa` to invoke `noaa`.
 
-2. Press <kbd>q</kbd> when done
+2. When done, use <kbd>q</kbd> to invoke `noaa-quit`.
