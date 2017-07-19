@@ -37,6 +37,8 @@
   "Buffer or buffer name.")
 
 ;; noaa-forecast (vs noaa-current)
+
+;;;###autoload
 (defun noaa ()
   "Request weather forecast data. Display the data in the buffer specified by ‘noaa-buffer-spec’."
   (interactive)
@@ -91,6 +93,7 @@
   "Return a day value for the time specified by ISO8601-STRING."
   (elt (parse-time-string (shell-command-to-string (format "date -d %s --iso-8601=date" iso8601-string))) 3))
 
+;;;###autoload
 (defun noaa-quit ()
   "Leave the buffer specified by ‘noaa-buffer-spec’."
   (interactive)
@@ -106,7 +109,6 @@
 
 ;; async version relying on tfk emacs-request library
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback)
-  (interactive)
   (request (or url (noaa-url noaa-latitude noaa-longitude))
 	   :parser 'buffer-string ;'json-read
 	   :error (function*
