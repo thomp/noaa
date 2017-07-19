@@ -19,10 +19,19 @@
 (require 'json)
 (require 'request)
 
-;; edit latitude and longitude to correspond to point of interest
-(defvar noaa-latitude 36.7478)
+(defgroup noaa ()
+  "View an NOAA weather forecast for a specific geographic location."
+  :group 'external)
 
-(defvar noaa-longitude -119.771)
+(defcustom noaa-latitude 36.7478
+  "The latitude corresponding to the location of interest."
+  :group 'noaa
+  :type '(number))
+
+(defcustom noaa-longitude -119.771
+  "The latitude corresponding to the location of interest."
+  :group 'noaa
+  :type '(number))
 
 (defvar noaa-buffer-spec "*noaa.el*"
   "Buffer or buffer name.")
