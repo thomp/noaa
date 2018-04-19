@@ -36,6 +36,15 @@
 (defvar noaa-buffer-spec "*noaa.el*"
   "Buffer or buffer name.")
 
+(defface noaa-face-date '((t (:foreground "#30c2ba")))
+  "Face used for date.")
+
+(defface noaa-face-short-forecast '((t (:foreground "grey")))
+  "Face used for short forecast text.")
+
+(defface noaa-face-temp '((t (:foreground "#cfd400")))
+  "Face used for temperature.")
+
 ;; noaa-forecast (vs noaa-current)
 
 ;;;###autoload
@@ -79,11 +88,11 @@
 		 ;; simple output w/some alignment
 		 (progn (if (not (= last-day-number day-number))
 			    (newline))
-			(insert (format "%s" name))
+			(insert (propertize (format "%s" name) 'face 'noaa-face-date))
 			(move-to-column day-field-width t)
-			(insert (format "%s" temp))
+			(insert (propertize (format "% s" temp) 'face 'noaa-face-temp))
 			(move-to-column (+ day-field-width temp-field-width) t)
-			(insert (format "%s" short-forecast))
+			(insert (propertize (format "%s" short-forecast) 'face 'noaa-face-short-forecast))
 			(newline))
 		 (setq last-day-number day-number)))))
 	 (goto-char (point-min)))))))
