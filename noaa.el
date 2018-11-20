@@ -1,6 +1,6 @@
 ;;; noaa.el --- Get NOAA weather data -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017 David Thompson
+;; Copyright (C) 2017,2018 David Thompson
 ;; Author: David Thompson
 ;; Version: 0.1
 ;; Keywords:
