@@ -62,6 +62,10 @@
   nil
   "A set of NOAA-DAY-FORECAST structs describing the last forecast retrieved.")
 
+(defvar noaa-last-forecast-raw
+  nil
+  "The server response associated with the last forecast request.")
+
 ;;;###autoload
 (defun noaa ()
   "Request weather forecast data. Display the data in the buffer specified by ‘noaa-buffer-spec’."
@@ -198,6 +202,7 @@
       (and error-thrown (message (error-message-string error-thrown))))
     (goto-char (point-min))
     (let ((result (json-read-from-string data)))
+      (setf noaa-last-forecast-raw result)
       (noaa-handle-noaa-result result)
       (noaa-mode))))
 
