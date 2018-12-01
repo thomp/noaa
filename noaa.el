@@ -37,7 +37,7 @@
 (defvar noaa-buffer-spec "*noaa.el*"
   "Buffer or buffer name.")
 
-(defvar noaa-display-styles '(default terse)
+(defvar noaa-display-styles '(default extended terse)
   "List of symbols indicating the various manners in which forecast data can be presented. The first member of the list is the currently active style.")
 
 (defface noaa-face-date '((t (:foreground "#30c2ba")))
@@ -126,6 +126,15 @@
 	     (move-to-column (+ day-field-width temp-field-width) t)
 	     (insert (propertize (format "%s" (noaa-day-forecast-short-forecast noaa-day-forecast)) 'face 'noaa-face-short-forecast))
 	     (newline)))
+	  ((eq style 'extended)
+	   (let ((day-field-width 16)
+		 (temp-field-width 5))
+	     (insert (propertize (format "%s" (noaa-day-forecast-name noaa-day-forecast)) 'face 'noaa-face-date))
+	     (move-to-column day-field-width t)
+	     (insert (propertize (format "% s" (noaa-day-forecast-temp noaa-day-forecast)) 'face 'noaa-face-temp))
+	     (newline) (newline)
+	     (insert (propertize (format "%s" (noaa-day-forecast-detailed-forecast noaa-day-forecast)) 'face 'noaa-face-short-forecast))
+	     (newline) (newline)))
 	  (t
 	   (error "Unrecognized style")))))
 
