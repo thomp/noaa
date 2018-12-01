@@ -54,8 +54,13 @@
   start-time
   end-time
   day-number
+  detailed-forecast
   name
   temp
+  temp-trend
+  temp-unit
+  wind-speed
+  wind-direction
   short-forecast)
 
 (defvar noaa-last-forecast
@@ -165,12 +170,13 @@
       (let ((period (elt periods i)))
 	(let ((start-time (funcall retrieve-fn period 'startTime)))
 	  (let ((day-number (noaa-iso8601-to-day start-time))
+		(detailed-forecast (funcall retrieve-fn period 'detailedForecast))
 		;; NAME is descriptive. It is not always the name of a week day. Exaples of valid values include "This Afternoon", "Thanksgiving Day", or "Wednesday Night".
 		(name (funcall retrieve-fn period 'name))
 		(temp (funcall retrieve-fn period 'temperature))
 		(short-forecast (funcall retrieve-fn period 'shortForecast)))
 	    (setf (elt noaa-last-forecast i)
-		  (make-noaa-day-forecast :start-time start-time :end-time nil :day-number day-number :name name :temp temp :short-forecast short-forecast))))))))
+		  (make-noaa-day-forecast :start-time start-time :end-time nil :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
 
 (defun noaa-url (&optional latitude longitude)
   "Return a string representing a URL. LATITUDE and LONGITUDE should be numbers."
