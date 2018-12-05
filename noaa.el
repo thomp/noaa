@@ -104,7 +104,8 @@
 	      last-day-number
 	      (= (noaa-day-forecast-day-number day-forecast)
 		 last-day-number)))
-	(setq last-day-number (noaa-day-forecast-day-number day-forecast))))))
+	(setq last-day-number (noaa-day-forecast-day-number day-forecast))))
+    (beginning-of-buffer)))
 
 (defun noaa-insert-day-forecast (noaa-day-forecast last-day-p)
   (let ((style (first noaa-display-styles)))
