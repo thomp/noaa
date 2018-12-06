@@ -75,10 +75,20 @@
 (defun noaa ()
   "Request weather forecast data. Display the data in the buffer specified by ‘noaa-buffer-spec’."
   (interactive)
-  (if (and (numberp noaa-latitude)
-	   (numberp noaa-longitude))
-      (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude))
-    (message "To use NOAA, first set NOAA-LATITUDE and NOAA-LONGITUDE.")))
+  ;; Honor CALENDAR- values if NOAA-LATITUDE and NOAA-LONGITUDE have
+  ;; not been specified
+  (when (not (and (numberp noaa-latitude)
+		  (numberp noaa-longitude)))
+    (when (and (numberp calendar-latitude)
+	       (numberp calendar-longitude))
+      (message "Using CALENDAR-LATITUDE and CALENDAR-LATITUDE values")
+      (setf noaa-latitude calendar-latitude
+	    noaa-longitude calendar-longitude)))
+  (cond ((and (numberp noaa-latitude)
+	      (numberp noaa-longitude))
+	 (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude)))
+	(t
+	 (message "To use NOAA, first set NOAA-LATITUDE and NOAA-LONGITUDE."))))
 
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
