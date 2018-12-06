@@ -86,7 +86,7 @@
 	    noaa-longitude calendar-longitude)))
   (cond ((and (numberp noaa-latitude)
 	      (numberp noaa-longitude))
-	 (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude)))
+	 (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude) 'noaa-http-callback))
 	(t
 	 (message "To use NOAA, first set NOAA-LATITUDE and NOAA-LONGITUDE."))))
 
@@ -220,7 +220,7 @@
 		     (message "E Error response: %S " error-thrown)
 		     (message "response: %S " response)))
 	   :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the NOAA server seems to be unhappy"))))
-	   :success (or http-callback 'noaa-http-callback)))
+	   :success http-callback))
 
 ;; forecast-http-callback
 (cl-defun noaa-http-callback (&key data response error-thrown &allow-other-keys)
