@@ -49,23 +49,23 @@
 (defface noaa-face-temp '((t (:foreground "#cfd400")))
   "Face used for temperature.")
 
-;; Forecast data for a single day
-(defstruct noaa-day-forecast
+;; Forecast data for a specified time range
+(defstruct noaa-forecast
   start-time
   end-time
   day-number
   detailed-forecast
+  short-forecast
   name
   temp
   temp-trend
   temp-unit
   wind-speed
-  wind-direction
-  short-forecast)
+  wind-direction)
 
 (defvar noaa-last-forecast
   nil
-  "A set of NOAA-DAY-FORECAST structs describing the last forecast retrieved.")
+  "A set of NOAA-FORECAST structs describing the last forecast retrieved.")
 
 (defvar noaa-last-forecast-raw
   nil
@@ -111,9 +111,9 @@
   (let ((style (first noaa-display-styles)))
     (cond ((eq style 'terse)
 	   (unless last-day-p
-	     (insert (propertize (format "%s " (substring (noaa-day-forecast-name noaa-day-forecast) 0 2))
+	     (insert (propertize (format "%s " (substring (noaa-forecast-name noaa-forecast) 0 2))
 				 'face 'noaa-face-date)))
-	   (insert (propertize (format "%s " (noaa-day-forecast-temp noaa-day-forecast))
+	   (insert (propertize (format "%s " (noaa-forecast-temp noaa-forecast))
 			       'face 'noaa-face-temp)))
 	  ((eq style 'default)
 	   (let ((day-field-width 16)
@@ -121,20 +121,20 @@
 	     ;; simple output w/some alignment
 	     (unless last-day-p
 	       (newline))
-	     (insert (propertize (format "%s" (noaa-day-forecast-name noaa-day-forecast)) 'face 'noaa-face-date))
+	     (insert (propertize (format "%s" (noaa-forecast-name noaa-forecast)) 'face 'noaa-face-date))
 	     (move-to-column day-field-width t)
-	     (insert (propertize (format "% s" (noaa-day-forecast-temp noaa-day-forecast)) 'face 'noaa-face-temp))
+	     (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
 	     (move-to-column (+ day-field-width temp-field-width) t)
-	     (insert (propertize (format "%s" (noaa-day-forecast-short-forecast noaa-day-forecast)) 'face 'noaa-face-short-forecast))
+	     (insert (propertize (format "%s" (noaa-forecast-short-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
 	     (newline)))
 	  ((eq style 'extended)
 	   (let ((day-field-width 16)
 		 (temp-field-width 5))
-	     (insert (propertize (format "%s" (noaa-day-forecast-name noaa-day-forecast)) 'face 'noaa-face-date))
+	     (insert (propertize (format "%s" (noaa-forecast-name noaa-forecast)) 'face 'noaa-face-date))
 	     (move-to-column day-field-width t)
-	     (insert (propertize (format "% s" (noaa-day-forecast-temp noaa-day-forecast)) 'face 'noaa-face-temp))
+	     (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
 	     (newline) (newline)
-	     (insert (propertize (format "%s" (noaa-day-forecast-detailed-forecast noaa-day-forecast)) 'face 'noaa-face-short-forecast))
+	     (insert (propertize (format "%s" (noaa-forecast-detailed-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
 	     (newline) (newline)))
 	  (t
 	   (error "Unrecognized style")))))
@@ -186,11 +186,17 @@
 		(temp (funcall retrieve-fn period 'temperature))
 		(short-forecast (funcall retrieve-fn period 'shortForecast)))
 	    (setf (elt noaa-last-forecast i)
-		  (make-noaa-day-forecast :start-time start-time :end-time nil :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
+		  (make-noaa-forecast :start-time start-time :end-time nil :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
 
-(defun noaa-url (&optional latitude longitude)
+(defun noaa-url (&optional latitude longitude hourlyp)
   "Return a string representing a URL. LATITUDE and LONGITUDE should be numbers."
-  (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude)))
+  (let (;; development only
+	(hourlyp t)
+	(url-string (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude))))
+    (when hourlyp
+      (setf url-string
+	    (concatenate 'string url-string "/hourly")))
+    url-string))
 
 (defun noaa-url-retrieve (url &optional http-callback)
   "Return the buffer containing only the 'raw' body of the HTTP response. Call HTTP-CALLBACK with the buffer as a single argument."
