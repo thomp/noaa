@@ -150,7 +150,7 @@
 	   (error "Unrecognized style")))))
 
 (defun noaa-handle-noaa-result (result)
-  "Handle the data described by RESULT (presumably the result of an HTTP request for NOAA forecast data)."
+  "Handle the data described by RESULT (presumably the result of an HTTP request for NOAA forecast data). Return a list of periods."
   (switch-to-buffer noaa-buffer-spec)
   ;; retrieve-fn accepts two arguments: a key-value store and a key
   ;; retrieve-fn returns the corresponding value
@@ -158,11 +158,7 @@
     (let ((properties (funcall retrieve-fn result 'properties)))
       (if (not properties)
 	  (message "Couldn't find properties. The NOAA API spec may have changed.")
-	(let ((periods (funcall retrieve-fn properties 'periods)))
-	  (message "have periods")
-	  (noaa-set-last-forecast periods)
-	  (message "displaying last forecast")
-	  (noaa-display-last-forecast))))))
+	(funcall retrieve-fn properties 'periods)))))
 
 ;; emacs built-ins aren't there yet for handling ISO8601 values -- leaning on date is non-portable but works nicely for systems where date is available
 (defun noaa-iso8601-to-day (iso8601-string)
@@ -236,7 +232,9 @@
     (goto-char (point-min))
     (let ((result (json-read-from-string data)))
       (setf noaa-last-forecast-raw result)
-      (noaa-handle-noaa-result result)
+      (let ((periods (noaa-handle-noaa-result result)))
+ 	(noaa-set-last-forecast periods))
+      (noaa-display-last-forecast)
       (noaa-mode))))
 
 (cl-defun noaa-http-callback--simple (&key data response error-thrown &allow-other-keys)
