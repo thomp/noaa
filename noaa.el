@@ -181,7 +181,8 @@
 	(let ((start-time (funcall retrieve-fn period 'startTime)))
 	  (let ((day-number (noaa-iso8601-to-day start-time))
 		(detailed-forecast (funcall retrieve-fn period 'detailedForecast))
-		;; NAME is descriptive. It is not always the name of a week day. Exaples of valid values include "This Afternoon", "Thanksgiving Day", or "Wednesday Night".
+		(end-time (funcall retrieve-fn period 'endTime))
+		;; NAME is descriptive. It is not always the name of a week day. Exaples of valid values include "This Afternoon", "Thanksgiving Day", or "Wednesday Night". For an hourly forecast, it may simply be the empty string.
 		(name (funcall retrieve-fn period 'name))
 		(temp (funcall retrieve-fn period 'temperature))
 		(short-forecast (funcall retrieve-fn period 'shortForecast)))
