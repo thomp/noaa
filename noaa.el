@@ -116,6 +116,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (beginning-of-buffer))
 
 (defun noaa-display-last-forecast-as-daily ()
+  "A helper function for NOAA-DISPLAY-LAST-FORECAST."
   (let (
 	;; LAST-DAY-NUMBER is used for aesthetics --> separate data by day
 	(last-day-number -1)
@@ -133,7 +134,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 	(setq last-day-number (noaa-forecast-day-number day-forecast))))))
 
 (defun noaa-display-as-hourly (forecast-set)
-  (message "display-as-hourly")
+  "Insert the hourly forecast described by FORECAST-SET into the current buffer. A helper function for NOAA-DISPLAY-LAST-FORECAST."
   (let ((forecast-length (length (noaa-forecast-set-forecasts forecast-set)))
 	;; Desirable to identify days
 	;; - but name may not be defined for points in an hourly forecast (name field may be "")
@@ -167,10 +168,12 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (- (apply 'max (noaa-forecast-ends forecast))
      (apply 'min (noaa-forecast-starts forecast))))
 (defun noaa-forecast-ends (forecast)
+  "Return a list of end times corresponding to points in FORECAST."
   (mapcar #'(lambda (forecast-point)
 	      (noaa-iso8601-to-seconds (noaa-forecast-end-time forecast-point)))
 	  forecast))
 (defun noaa-forecast-starts (forecast)
+  "Return a list of start times corresponding to points in FORECAST."
   (mapcar #'(lambda (forecast-point)
 	      (noaa-iso8601-to-seconds (noaa-forecast-start-time forecast-point)))
 	  forecast))
@@ -183,7 +186,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (noaa-display-last-forecast))
 
 (defun noaa-insert-day-forecast (noaa-forecast last-day-p)
-  (message "insert00")
+  "Insert the forecast text for the forecast described by NOAA-FORECAST into the current buffer. A helper function for NOAA-DISPLAY-LAST-FORECAST-AS-DAILY."
   (let ((style (first noaa-display-styles)))
     (cond ((eq style 'terse)
 	   (unless last-day-p
@@ -220,6 +223,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 
 ;; If WITH-DAY-P is true, depending on style, provide an indication of the day (e.g., name of day or calendar date).
 (defun noaa-insert-hour-forecast (noaa-forecast with-day-p)
+  "Insert the forecast described by NOAA-FORECAST into the current buffer. A helper function for NOAA-DISPLAY-AS-HOURLY."
   (when with-day-p
     (newline)
     (insert
@@ -275,7 +279,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (format-time-string "%A" (parse-iso8601-time-string iso8601-string)))
 
 (defun noaa-iso8601-to-seconds (iso8601-string)
-  "Return an integer representing the number of seconds since since 1970-01-01 00:00:00 UTC. For example, invocation with `2018-12-24T18:00:00-08:00' should return 1545703200."
+  "Return an integer representing the number of seconds since since 1970-01-01 00:00:00 UTC as indicated by the ISO 8601 time indicated by ISO8601-STRING. For example, invocation with `2018-12-24T18:00:00-08:00' should return 1545703200."
   (string-to-number (format-time-string "%s" (parse-iso8601-time-string iso8601-string))))
 
 ;;;###autoload
@@ -285,6 +289,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (kill-buffer noaa-buffer-spec))
 
 (defun noaa-clear-forecast-set (forecast-set)
+  "Set the slots in the forecast-set struct FORECAST-SET to NIL."
   (setf (noaa-forecast-set-forecasts forecast-set)
 	nil)
   (setf (noaa-forecast-set-type forecast-set)
@@ -312,7 +317,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 		  (make-noaa-forecast :start-time start-time :end-time end-time :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
 
 (defun noaa-url (&optional latitude longitude hourlyp)
-  "Return a string representing a URL. LATITUDE and LONGITUDE should be numbers."
+  "Return a string representing a URL. LATITUDE and LONGITUDE should be numbers. HOURLYP should be true if the forecast requested is an hourly forecast."
   (let ((url-string (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude))))
     (when hourlyp
       (setf url-string
@@ -320,7 +325,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
     url-string))
 
 (defun noaa-url-retrieve (url &optional http-callback)
-  "Return the buffer containing only the 'raw' body of the HTTP response. Call HTTP-CALLBACK with the buffer as a single argument."
+  "Return the buffer containing only the 'raw' body of the HTTP response associated with a GET request to URL. If URL is NIL, the GET request is made to the URL described by `(noaa-url noaa-latitude noaa-longitude)'. Call HTTP-CALLBACK with the buffer as a single argument."
   (noaa-url-retrieve-tkf-emacs-request url http-callback))
 
 ;; async version relying on tfk emacs-request library
@@ -329,7 +334,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 	   :parser 'buffer-string ;'json-read
 	   :error (function*
 		   (lambda (&key data error-thrown response symbol-status &allow-other-keys)
-		     (message "data: %S " data) 
+		     (message "data: %S " data)
 		     (message "symbol-status: %S " symbol-status)
 		     (message "E Error response: %S " error-thrown)
 		     (message "response: %S " response)))
@@ -379,6 +384,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (insert x))
 
 (defun noaa-next-style ()
+  "Transition to the next style described by NOAA-DISPLAY-STYLES."
   (interactive)
   ;; wouldn't hurt to add this to other (interactive) fns that should only operate within noaa-mode
   (unless (eq (current-buffer) (get-buffer noaa-buffer-spec))
