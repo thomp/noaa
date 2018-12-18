@@ -63,9 +63,14 @@
   wind-speed
   wind-direction)
 
-(defvar noaa-last-forecast
+;; FORECASTS is a list of noaa-forecast structs. TYPE is a keyword (e.g., :daily, :hourly) providing guidance on how to treat the forecasts in the FORECAST-SET slot.
+(defstruct noaa-forecast-set
+  forecasts
+  type)
+
+(defvar noaa-last-forecast-set
   nil
-  "A set of NOAA-FORECAST structs describing the last forecast retrieved.")
+  "A NOAA-FORECAST-SET struct describing the last forecast retrieved.")
 
 (defvar noaa-last-forecast-raw
   nil
@@ -86,7 +91,8 @@
 	    noaa-longitude calendar-longitude)))
   (cond ((and (numberp noaa-latitude)
 	      (numberp noaa-longitude))
-	 (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude) 'noaa-http-callback))
+	 (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude nil)
+			    (function noaa-http-callback-daily)))
 	(t
 	 (message "To use NOAA, first set NOAA-LATITUDE and NOAA-LONGITUDE."))))
 
@@ -98,30 +104,93 @@
       nil)))
 
 (defun noaa-display-last-forecast ()
+  "Clear the buffer specified by NOAA-BUFFER-SPEC and display the
+forecast described by the value of NOAA-LAST-FORECAST-SET."
   (interactive)
   (erase-buffer)
+  (cond ((eq (noaa-forecast-set-type noaa-last-forecast-set) :hourly)	      ;(noaa-forecast-hourly-p noaa-last-forecast-set)
+	 (noaa-display-as-hourly noaa-last-forecast-set))
+	(t
+	 ;; if not hourly, assume daily
+	 (noaa-display-last-forecast-as-daily)))
+  (beginning-of-buffer))
+
+(defun noaa-display-last-forecast-as-daily ()
   (let (
 	;; LAST-DAY-NUMBER is used for aesthetics --> separate data by day
 	(last-day-number -1)
 	(day-field-width 16)
 	(temp-field-width 5)
-	(forecast-length (length noaa-last-forecast)))
+	(forecast-length (length (noaa-forecast-set-forecasts noaa-last-forecast-set))))
     (dotimes (index forecast-length)
-      (let ((day-forecast (elt noaa-last-forecast index)))
+      (let ((day-forecast (elt (noaa-forecast-set-forecasts noaa-last-forecast-set) index)))
 	(noaa-insert-day-forecast
 	 day-forecast
-	 (and (noaa-day-forecast-day-number day-forecast)
+	 (and (noaa-forecast-day-number day-forecast)
 	      last-day-number
-	      (= (noaa-day-forecast-day-number day-forecast)
+	      (= (noaa-forecast-day-number day-forecast)
 		 last-day-number)))
-	(setq last-day-number (noaa-day-forecast-day-number day-forecast))))
-    (beginning-of-buffer)))
+	(setq last-day-number (noaa-forecast-day-number day-forecast))))))
 
-(defun noaa-insert-day-forecast (noaa-day-forecast last-day-p)
+(defun noaa-display-as-hourly (forecast-set)
+  (message "display-as-hourly")
+  (let ((forecast-length (length (noaa-forecast-set-forecasts forecast-set)))
+	;; Desirable to identify days
+	;; - but name may not be defined for points in an hourly forecast (name field may be "")
+	(name nil)
+	;; - can try tracking using calendar day
+	(day-of-month )
+	)
+    (dotimes (index forecast-length)
+      (let ((forecast (elt (noaa-forecast-set-forecasts forecast-set) index)))
+	(let ((this-forecast-name (noaa-forecast-name forecast)))
+	  ;; dtk-empty-sequence-p
+	  (when (or (not this-forecast-name)
+		    (= 0 (length this-forecast-name)))
+	    (setf this-forecast-name (noaa-iso8601-to-day-name (iso8601-string))))
+	  (noaa-insert-hour-forecast
+	   forecast
+	   (cond ((not (equalp name this-forecast-name))
+		  ;; day changed
+		  (setf name this-forecast-name)
+		  t)
+		 (t nil))
+	   ))))))
+
+(defun noaa-forecast-hourly-p (forecast)
+  "Return T if the set of forecast structs described by FORECAST seems to represent an hourly forecast."
+  (< (noaa-forecast-range forecast)
+     (* 2 24 60 60) 			;172800
+     ))
+(defun noaa-forecast-range (forecast)
+  "Return difference, in sec, between earliest start time and latest end time in the set of forecast structs described by FORECAST."
+  (- (apply 'max (noaa-forecast-ends forecast))
+     (apply 'min (noaa-forecast-starts forecast))))
+(defun noaa-forecast-ends (forecast)
+  (mapcar #'(lambda (forecast-point)
+	      (noaa-iso8601-to-seconds (noaa-forecast-end-time forecast-point)))
+	  forecast))
+(defun noaa-forecast-starts (forecast)
+  (mapcar #'(lambda (forecast-point)
+	      (noaa-iso8601-to-seconds (noaa-forecast-start-time forecast-point)))
+	  forecast))
+
+(defun noaa-hourly ()
+  "Retrieve and display the hourly forecast."
+  (interactive)
+  (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude t)
+		     (function noaa-http-callback-hourly))
+  (noaa-display-last-forecast))
+
+(defun noaa-insert-day-forecast (noaa-forecast last-day-p)
+  (message "insert00")
   (let ((style (first noaa-display-styles)))
     (cond ((eq style 'terse)
 	   (unless last-day-p
-	     (insert (propertize (format "%s " (substring (noaa-forecast-name noaa-forecast) 0 2))
+	     (insert (propertize (format "%s "
+					 (s-truncate 3
+						     (noaa-forecast-name noaa-forecast)
+						     ""))
 				 'face 'noaa-face-date)))
 	   (insert (propertize (format "%s " (noaa-forecast-temp noaa-forecast))
 			       'face 'noaa-face-temp)))
@@ -149,6 +218,43 @@
 	  (t
 	   (error "Unrecognized style")))))
 
+;; If WITH-DAY-P is true, depending on style, provide an indication of the day (e.g., name of day or calendar date).
+(defun noaa-insert-hour-forecast (noaa-forecast with-day-p)
+  (when with-day-p
+    (newline)
+    (insert
+     (propertize (noaa-forecast-name noaa-forecast)
+		 'face 'noaa-face-date))
+    (newline))
+  (let ((style (first noaa-display-styles)))
+    (cond ((eq style 'terse)
+	   ;; s-truncate is convenient since it accomodates string of length less than truncate value
+	   (insert (propertize (format "%s " (s-truncate 2 (noaa-forecast-start-time noaa-forecast)))
+			       'face 'noaa-face-date))
+	   (insert (propertize (format "%s " (noaa-forecast-temp noaa-forecast))
+			       'face 'noaa-face-temp)))
+	  ((eq style 'default)
+	   (let ((date-field-width 16)
+		 (temp-field-width 5))
+	     ;; simple output w/some alignment
+	     (insert (propertize (format "%s" (noaa-forecast-start-time noaa-forecast)) 'face 'noaa-face-date))
+	     (move-to-column date-field-width t)
+	     (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
+	     (move-to-column (+ date-field-width temp-field-width) t)
+	     (insert (propertize (format "%s" (noaa-forecast-short-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
+	     (newline)))
+	  ((eq style 'extended)
+	   (let ((date-field-width 16)
+		 (temp-field-width 5))
+	     (insert (propertize (format "%s" (noaa-forecast-start-time noaa-forecast)) 'face 'noaa-face-date))
+	     (move-to-column date-field-width t)
+	     (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
+	     (newline) (newline)
+	     (insert (propertize (format "%s" (noaa-forecast-detailed-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
+	     (newline) (newline)))
+	  (t
+	   (error "Unrecognized style")))))
+
 (defun noaa-handle-noaa-result (result)
   "Handle the data described by RESULT (presumably the result of an HTTP request for NOAA forecast data). Return a list of periods."
   (switch-to-buffer noaa-buffer-spec)
@@ -160,10 +266,17 @@
 	  (message "Couldn't find properties. The NOAA API spec may have changed.")
 	(funcall retrieve-fn properties 'periods)))))
 
-;; emacs built-ins aren't there yet for handling ISO8601 values -- leaning on date is non-portable but works nicely for systems where date is available
 (defun noaa-iso8601-to-day (iso8601-string)
-  "Return a day value for the time specified by ISO8601-STRING."
-  (elt (parse-time-string (shell-command-to-string (format "date -d %s --iso-8601=date" iso8601-string))) 3))
+  "Return an integer representing the day as specified by ISO8601-STRING. For example, invocation with 2018-12-24T18:00:00-08:00 should return 24."
+  (string-to-number (format-time-string "%d" (parse-iso8601-time-string iso8601-string))))
+
+(defun noaa-iso8601-to-day-name (iso8601-string)
+  "Return a string representing the name of a day of the week where the value is that specified by ISO8601-STRING. For example, invocation with `2018-12-12T01:00:00-08:00' should return `Wednesday'."
+  (format-time-string "%A" (parse-iso8601-time-string iso8601-string)))
+
+(defun noaa-iso8601-to-seconds (iso8601-string)
+  "Return an integer representing the number of seconds since since 1970-01-01 00:00:00 UTC. For example, invocation with `2018-12-24T18:00:00-08:00' should return 1545703200."
+  (string-to-number (format-time-string "%s" (parse-iso8601-time-string iso8601-string))))
 
 ;;;###autoload
 (defun noaa-quit ()
@@ -171,17 +284,20 @@
   (interactive)
   (kill-buffer noaa-buffer-spec))
 
-(defun noaa-clear-last-forecast ()
-  (setf noaa-last-forecast nil))
+(defun noaa-clear-forecast-set (forecast-set)
+  (setf (noaa-forecast-set-forecasts forecast-set)
+	nil)
+  (setf (noaa-forecast-set-type forecast-set)
+	nil))
 
-(defun noaa-set-last-forecast (periods)
-  (message "periods: %S " periods)
-  (noaa-clear-last-forecast)
+(defun noaa-populate-forecasts (periods forecast-set)
+  "Populate the forecasts slot of the forecast-set struct FORECAST-SET using PERIODS."
   ;; retrieve-fn accepts two arguments: a key-value store and a key
   ;; retrieve-fn returns the corresponding value
   (let ((retrieve-fn 'noaa-aval)
 	(number-of-periods (length periods)))
-    (setf noaa-last-forecast (make-list (length periods) nil))
+    (setf (noaa-forecast-set-forecasts forecast-set)
+	  (make-list (length periods) nil))
     (dotimes (i number-of-periods)
       (let ((period (elt periods i)))
 	(let ((start-time (funcall retrieve-fn period 'startTime)))
@@ -192,14 +308,12 @@
 		(name (funcall retrieve-fn period 'name))
 		(temp (funcall retrieve-fn period 'temperature))
 		(short-forecast (funcall retrieve-fn period 'shortForecast)))
-	    (setf (elt noaa-last-forecast i)
-		  (make-noaa-forecast :start-time start-time :end-time nil :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
+	    (setf (elt (noaa-forecast-set-forecasts forecast-set) i)
+		  (make-noaa-forecast :start-time start-time :end-time end-time :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
 
 (defun noaa-url (&optional latitude longitude hourlyp)
   "Return a string representing a URL. LATITUDE and LONGITUDE should be numbers."
-  (let (;; development only
-	(hourlyp t)
-	(url-string (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude))))
+  (let ((url-string (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude))))
     (when hourlyp
       (setf url-string
 	    (concatenate 'string url-string "/hourly")))
@@ -222,7 +336,14 @@
 	   :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the NOAA server seems to be unhappy"))))
 	   :success http-callback))
 
-;; forecast-http-callback
+(cl-defun noaa-http-callback-daily (&key data response error-thrown &allow-other-keys)
+  (noaa-http-callback :data data :response response :error-thrown error-thrown)
+  (setf (noaa-forecast-set-type noaa-last-forecast-set) :daily))
+
+(cl-defun noaa-http-callback-hourly (&key data response error-thrown &allow-other-keys)
+  (noaa-http-callback :data data :response response :error-thrown error-thrown)
+  (setf (noaa-forecast-set-type noaa-last-forecast-set) :hourly))
+
 (cl-defun noaa-http-callback (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
     (switch-to-buffer noaa-buffer)
@@ -233,7 +354,9 @@
     (let ((result (json-read-from-string data)))
       (setf noaa-last-forecast-raw result)
       (let ((periods (noaa-handle-noaa-result result)))
- 	(noaa-set-last-forecast periods))
+	(unless (noaa-forecast-set-p noaa-last-forecast-set)
+	  (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
+ 	(noaa-populate-forecasts periods noaa-last-forecast-set))
       (noaa-display-last-forecast)
       (noaa-mode))))
 
