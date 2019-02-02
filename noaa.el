@@ -148,12 +148,15 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 	  ;; dtk-empty-sequence-p
 	  (when (or (not this-forecast-name)
 		    (= 0 (length this-forecast-name)))
-	    (setf this-forecast-name (noaa-iso8601-to-day-name (iso8601-string))))
+	    (setf this-forecast-name (noaa-iso8601-to-day-name (noaa-forecast-start-time forecast))))
 	  (noaa-insert-hour-forecast
 	   forecast
 	   (cond ((not (equalp name this-forecast-name))
 		  ;; day changed
 		  (setf name this-forecast-name)
+		  ;; ensure name is set in the forecast struct
+		  (setf (noaa-forecast-name (elt (noaa-forecast-set-forecasts forecast-set) index))
+			this-forecast-name)
 		  t)
 		 (t nil))
 	   ))))))
@@ -233,31 +236,28 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (let ((style (first noaa-display-styles)))
     (cond ((eq style 'terse)
 	   ;; s-truncate is convenient since it accomodates string of length less than truncate value
-	   (insert (propertize (format "%s " (s-truncate 2 (noaa-forecast-start-time noaa-forecast)))
-			       'face 'noaa-face-date))
+	   (insert (propertize (noaa-iso8601-to-hour-min (noaa-forecast-start-time noaa-forecast)) 'face 'noaa-face-date))
+	   (insert " -" ?\x0020)
 	   (insert (propertize (format "%s " (noaa-forecast-temp noaa-forecast))
 			       'face 'noaa-face-temp)))
 	  ((eq style 'default)
-	   (let ((date-field-width 16)
-		 (temp-field-width 5))
-	     ;; simple output w/some alignment
-	     (insert (propertize (format "%s" (noaa-forecast-start-time noaa-forecast)) 'face 'noaa-face-date))
-	     (move-to-column date-field-width t)
-	     (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
-	     (move-to-column (+ date-field-width temp-field-width) t)
-	     (insert (propertize (format "%s" (noaa-forecast-short-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
-	     (newline)))
+	   (noaa-insert-hour-forecast-default noaa-forecast with-day-p))
 	  ((eq style 'extended)
-	   (let ((date-field-width 16)
-		 (temp-field-width 5))
-	     (insert (propertize (format "%s" (noaa-forecast-start-time noaa-forecast)) 'face 'noaa-face-date))
-	     (move-to-column date-field-width t)
-	     (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
-	     (newline) (newline)
-	     (insert (propertize (format "%s" (noaa-forecast-detailed-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
-	     (newline) (newline)))
+	   ;; until a different "extended" style is developed...
+	   (noaa-insert-hour-forecast-default noaa-forecast with-day-p))
 	  (t
 	   (error "Unrecognized style")))))
+
+(defun noaa-insert-hour-forecast-default (noaa-forecast with-day-p)
+  (let ((hour-field-end-col 7)
+	(temp-field-end-col 12))
+    (insert ?\x0020)
+    (insert (propertize (noaa-iso8601-to-hour-min (noaa-forecast-start-time noaa-forecast)) 'face 'noaa-face-date))
+    (move-to-column hour-field-end-col t)
+    (insert (propertize (format "% s" (noaa-forecast-temp noaa-forecast)) 'face 'noaa-face-temp))
+    (move-to-column temp-field-end-col t)
+    (insert (propertize (format "%s" (noaa-forecast-short-forecast noaa-forecast)) 'face 'noaa-face-short-forecast))
+    (newline)))
 
 (defun noaa-handle-noaa-result (result)
   "Handle the data described by RESULT (presumably the result of an HTTP request for NOAA forecast data). Return a list of periods."
@@ -269,6 +269,10 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
       (if (not properties)
 	  (message "Couldn't find properties. The NOAA API spec may have changed.")
 	(funcall retrieve-fn properties 'periods)))))
+
+(defun noaa-iso8601-to-hour-min (iso8601-string)
+  "Return a string representing the time as HH:MM as specified by ISO8601-STRING. For example, invocation with 2018-12-24T18:00:00-08:00 should return 18:00."
+  (format-time-string "%H:%M" (parse-iso8601-time-string iso8601-string)))
 
 (defun noaa-iso8601-to-day (iso8601-string)
   "Return an integer representing the day as specified by ISO8601-STRING. For example, invocation with 2018-12-24T18:00:00-08:00 should return 24."
@@ -342,12 +346,17 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 	   :success http-callback))
 
 (cl-defun noaa-http-callback-daily (&key data response error-thrown &allow-other-keys)
+  ;; currently: callback populates noaa-last-forecast-set and then calls (noaa-display-last-forecast) and (noaa-mode)
   (noaa-http-callback :data data :response response :error-thrown error-thrown)
-  (setf (noaa-forecast-set-type noaa-last-forecast-set) :daily))
+  (setf (noaa-forecast-set-type noaa-last-forecast-set) :daily)
+  (noaa-display-last-forecast)
+  (noaa-mode))
 
 (cl-defun noaa-http-callback-hourly (&key data response error-thrown &allow-other-keys)
   (noaa-http-callback :data data :response response :error-thrown error-thrown)
-  (setf (noaa-forecast-set-type noaa-last-forecast-set) :hourly))
+  (setf (noaa-forecast-set-type noaa-last-forecast-set) :hourly)
+  (noaa-display-last-forecast)
+  (noaa-mode))
 
 (cl-defun noaa-http-callback (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
@@ -361,9 +370,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
       (let ((periods (noaa-handle-noaa-result result)))
 	(unless (noaa-forecast-set-p noaa-last-forecast-set)
 	  (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
- 	(noaa-populate-forecasts periods noaa-last-forecast-set))
-      (noaa-display-last-forecast)
-      (noaa-mode))))
+ 	(noaa-populate-forecasts periods noaa-last-forecast-set)))))
 
 (cl-defun noaa-http-callback--simple (&key data response error-thrown &allow-other-keys)
   (let ((noaa-buffer (get-buffer-create noaa-buffer-spec)))
@@ -406,6 +413,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 (defvar noaa-mode-map (make-sparse-keymap)
   "Keymap for `noaa-mode'.")
 
+(define-key noaa-mode-map (kbd "h") 'noaa-hourly)
 (define-key noaa-mode-map (kbd "q") 'noaa-quit)
 (define-key noaa-mode-map (kbd "n") 'noaa-next-style)
 
