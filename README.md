@@ -16,7 +16,7 @@ The [NOAA](http://www.noaa.gov) exposes a number of services which provide weath
 
 ### Configure noaa.el
 
-Ensure `noaa-latitude` and `noaa-longitude` are set to the desired values. For example, one might set them via `ielm` (<kbd>M-x</kbd> `ielm`):
+If `calendar-latitude` and `calendar-latitude` are already defined, those values will be used. If they are not defined, ensure `noaa-latitude` and `noaa-longitude` are set to the desired values. For example, one might set them via `ielm` (<kbd>M-x</kbd> `ielm`):
 
     ;; set latitude and longitude for noaa.el
 	(setq noaa-latitude 45)
