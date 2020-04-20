@@ -28,6 +28,12 @@ If `calendar-latitude` and `calendar-latitude` are already defined, those values
 
 2. When done, use <kbd>q</kbd> to invoke `noaa-quit`.
 
+### Additional notes on use
+
+- An hourly forecast can be accessed via `noaa-hourly`.
+
+- Use the <kbd>n</kbd> key to cycle through views of the forecast which vary in terms of verbosity
+
 ## License
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
