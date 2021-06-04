@@ -1,12 +1,12 @@
 ;;; noaa.el --- Get NOAA weather data -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017,2018 David Thompson
+;; Copyright (C) 2017,2018, 2021 David Thompson
 ;; Author: David Thompson
 ;; Version: 0.1
-;; Keywords:
+;; Keywords: calendar
 ;; Homepage: https://github.com/thomp/noaa
 ;; URL: https://github.com/thomp/noaa
-;; Package-Requires: ((request "0.2.0") (cl-lib "0.5") (emacs "24") (dash "2.14.1"))
+;; Package-Requires: ((emacs "27.1") (request "0.2.0") (dash "2.14.1"))
 
 ;;; Commentary:
 
@@ -21,7 +21,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'cl-macs)    ; cl-function
 (require 'cl-extra)   ; cl-concatenate
 (require 'dash)
 (require 'json)
@@ -178,7 +177,7 @@ Shortcut for M-x `noaa' with a prefix argument."
 NUM is a string representation of a floating point number."
   (replace-regexp-in-string "\\.\\(....\\).*" ".\\1" num))
 
-(cl-defun noaa--osm-callback (&key data response error-thrown &allow-other-keys)
+(cl-defun noaa--osm-callback (&key data _response _error-thrown &allow-other-keys)
   (unless data
     (error "No data returned from openstreetmap.org"))
   (condition-case nil
@@ -254,8 +253,7 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 		  (setf (noaa-forecast-name (elt (noaa-forecast-set-forecasts forecast-set) index))
 			this-forecast-name)
 		  t)
-		 (t nil))
-	   ))))))
+		 (t nil))))))))
 
 (defun noaa-forecast-hourly-p (forecast)
   "Return T if the set of forecast structs described by FORECAST seems to represent an hourly forecast."
