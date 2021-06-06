@@ -2,7 +2,9 @@
 
 *View a simple summary of an NOAA weather forecast*
 
-The [NOAA](http://www.noaa.gov) exposes a number of services which provide weather-related data. **noaa.el** provides an interface for viewing forecast data at api.weather.gov.
+The [NOAA](http://www.noaa.gov) exposes a number of services which
+provide weather-related data. **noaa.el** provides an interface for
+viewing USA forecast data at api.weather.gov.
 
 ---
 
@@ -22,6 +24,9 @@ If `calendar-latitude` and `calendar-latitude` are already defined, those values
 	(setq noaa-latitude 45)
 	(setq noaa-longitude 120)
 
+NOAA accepts coordinates as floating point numbers with up to four
+digits of precision (eg. 45.1234).
+
 ## Use
 
 1. Use <kbd>M-x</kbd> `noaa` to invoke `noaa`.
@@ -30,9 +35,29 @@ If `calendar-latitude` and `calendar-latitude` are already defined, those values
 
 ### Additional notes on use
 
-- An hourly forecast can be accessed via `noaa-hourly`.
+- The header line lists useful keybindings
 
-- Use the <kbd>n</kbd> key to cycle through views of the forecast which vary in terms of verbosity
+  - <kbd>n</kbd> to cycle through forecast view styles
+
+  - <kbd>h</kbd> to view an hourly forecast
+
+  - <kbd>d</kbd> to view a daily forecast (the default)
+
+  - <kbd>c</kbd> to view a forecast for a different USA location.
+
+    - You can enter a CITY, ST location string, or if you just press
+      <kbd>enter</kbd> you'll be prompted for latitude and longitude
+      coordinates.
+
+  - <kbd>q</kbd> to quit
+
+## Customization
+
+The default forecast presentation styles don't present *all* of the
+possible data available from NOAA. You can customize the styles to
+suit your needs by modifying variables `noaa-daily-styles` and
+`noaa-hourly-styles` with reference to the NOAA api. Two useful
+reference URLs are indicated in the source code.
 
 ## License
 
