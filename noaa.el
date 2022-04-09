@@ -508,13 +508,6 @@ buffer as a single argument."
         (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
        (noaa-populate-forecasts periods noaa-last-forecast-set))))
 
-(cl-defun noaa-http-callback--simple (&key data _response error-thrown &allow-other-keys)
-  (noaa--get-buffer)
-  (let ((inhibit-read-only t))
-    (erase-buffer)
-    (and error-thrown (message (error-message-string error-thrown)))
-    (noaa-insert data)))
-
 (defun noaa-parse-json-in-buffer ()
   "Parse and return the JSON object present in the buffer specified by ‘noaa-buffer-spec’."
   (switch-to-buffer noaa-buffer-spec)
