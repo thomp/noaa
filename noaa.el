@@ -206,7 +206,6 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (let ((inhibit-read-only t))
     (erase-buffer)
     (cond ((eq (noaa-forecast-set-type noaa-last-forecast-set) :hourly)
-	    ;; (noaa-forecast-hourly-p noaa-last-forecast-set)
   	 (noaa-display-as-hourly noaa-last-forecast-set))
   	(t
   	 ;; if not hourly, assume daily
@@ -255,11 +254,6 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 		  t)
 		 (t nil))))))))
 
-(defun noaa-forecast-hourly-p (forecast)
-  "Return T if the set of forecast structs described by FORECAST seems to represent an hourly forecast."
-  (< (noaa-forecast-range forecast)
-     (* 2 24 60 60) 			;172800
-     ))
 (defun noaa-forecast-range (forecast)
   "Return difference, in sec, between earliest start time and latest end time in the set of forecast structs described by FORECAST."
   (- (apply 'max (noaa-forecast-ends forecast))
