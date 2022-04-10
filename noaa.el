@@ -108,6 +108,9 @@ and account for two possible strings: location and display-style.")
   nil
   "The server response associated with the last forecast request.")
 
+(defvar noaa-last-response nil
+  "Last response from the NOAA API.")
+
 (defvar noaa--osm-api
   "https://nominatim.openstreetmap.org/search?q=%s&limit=1&format=json"
   "Query format to retreive latitude and longitude data.
@@ -505,6 +508,10 @@ buffer as a single argument."
       (unless (noaa-forecast-set-p noaa-last-forecast-set)
         (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
        (noaa-populate-forecasts periods noaa-last-forecast-set))))
+
+;; generic callback
+(cl-defun noaa-http-callback--handle-json (&key data _response error-thrown &allow-other-keys)
+  (setf noaa-last-response (json-read-from-string data)))
 
 (defun noaa-insert (x)
   "Insert X into the buffer specified by ‘noaa-buffer-spec’."
