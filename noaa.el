@@ -460,16 +460,20 @@ buffer as a single argument."
 
 ;; async version relying on tfk emacs-request library
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback)
-  (request (or url (noaa-url noaa-latitude noaa-longitude))
-	   :parser 'buffer-string ;'json-read
-	   :error (cl-function
-		   (lambda (&key data error-thrown response symbol-status &allow-other-keys)
-		     (message "data: %S " data)
-		     (message "symbol-status: %S " symbol-status)
-		     (message "E Error response: %S " error-thrown)
-		     (message "response: %S " response)))
-	   :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the NOAA server seems to be unhappy"))))
-	   :success http-callback))
+  (request url
+    :headers '(
+	       ("Upgrade-Insecure-Requests" . "1")
+	       ("User-Agent" . (string-trim (url-http-user-agent-string)))
+	       )
+    :parser 'buffer-string
+    :error (cl-function
+	    (lambda (&key data error-thrown response symbol-status &allow-other-keys)
+	      (message "data: %S " data)
+	      (message "symbol-status: %S " symbol-status)
+	      (message "E Error response: %S " error-thrown)
+	      (message "response: %S " response)))
+    :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the server seems unhappy"))))
+    :success http-callback))
 
 (cl-defun noaa-http-callback-daily (&key data response error-thrown &allow-other-keys)
   ;; currently: callback populates noaa-last-forecast-set and then calls (noaa-display-last-forecast) and (noaa-mode)
