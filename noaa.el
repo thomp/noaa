@@ -95,6 +95,9 @@ and account for two possible strings: location and display-style.")
   wind-speed
   wind-direction)
 
+(defvar noaa-forecast-urls nil
+  "Cache of forecast URLs based on the NOAA gridpoints API.")
+
 ;; FORECASTS is a list of noaa-forecast structs. TYPE is a keyword (e.g., :daily, :hourly) providing guidance on how to treat the forecasts in the FORECAST-SET slot.
 (cl-defstruct noaa-forecast-set
   forecasts
