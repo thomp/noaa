@@ -421,6 +421,11 @@ buffer based upon them.")
   (setf (noaa-forecast-set-type forecast-set)
 	nil))
 
+(defun noaa-points-url (latitude longitude)
+  "Return a NOAA API HTTP GET request string. LATITUDE and LONGITUDE
+should be numbers."
+  (format "https://api.weather.gov/points/%s,%s" latitude longitude))
+
 (defun noaa-populate-forecasts (periods forecast-set)
   "Populate the forecasts slot of the forecast-set struct FORECAST-SET using PERIODS."
   ;; retrieve-fn accepts two arguments: a key-value store and a key
