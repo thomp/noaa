@@ -206,10 +206,10 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   (let ((inhibit-read-only t))
     (erase-buffer)
     (cond ((eq (noaa-forecast-set-type noaa-last-forecast-set) :hourly)
-  	 (noaa-display-as-hourly noaa-last-forecast-set))
-  	(t
-  	 ;; if not hourly, assume daily
-  	 (noaa-display-last-forecast-as-daily)))
+  	   (noaa-display-as-hourly noaa-last-forecast-set))
+  	  (t
+  	   ;; if not hourly, assume daily
+  	   (noaa-display-last-forecast-as-daily)))
     (goto-char (point-min))))
 
 (defun noaa-display-last-forecast-as-daily ()
