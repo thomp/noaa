@@ -508,11 +508,6 @@ buffer as a single argument."
         (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
        (noaa-populate-forecasts periods noaa-last-forecast-set))))
 
-(defun noaa-parse-json-in-buffer ()
-  "Parse and return the JSON object present in the buffer specified by ‘noaa-buffer-spec’."
-  (switch-to-buffer noaa-buffer-spec)
-  (json-read))
-
 (defun noaa-insert (x)
   "Insert X into the buffer specified by ‘noaa-buffer-spec’."
   (switch-to-buffer noaa-buffer-spec)
