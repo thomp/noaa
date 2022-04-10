@@ -260,6 +260,15 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
 		  t)
 		 (t nil))))))))
 
+(defun noaa-ensure-forecast-url-established ()
+  "Given latitude and longitude data, ensure the corresponding
+forecast URL is established."
+  (unless (assoc (cons noaa-latitude noaa-longitude)
+		 noaa-forecast-urls
+		 'equal)
+    (noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
+		       (function noaa-http-callback--establish-forecast-url))))
+
 (defun noaa-forecast-range (forecast)
   "Return difference, in sec, between earliest start time and latest end time in the set of forecast structs described by FORECAST."
   (- (apply 'max (noaa-forecast-ends forecast))
@@ -516,6 +525,19 @@ buffer as a single argument."
       (unless (noaa-forecast-set-p noaa-last-forecast-set)
         (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
        (noaa-populate-forecasts periods noaa-last-forecast-set))))
+
+;; handle NOAA API points query and establish the corresponding forecast URL
+(cl-defun noaa-http-callback--establish-forecast-url (&key data _response error-thrown &allow-other-keys)
+  (setf noaa-last-response nil)
+  (noaa-http-callback--handle-json :data data :_response _response :error-thrown error-thrown)
+  (let ((forecast-url
+	 ;;(json-pointer-get noaa-last-response "/properties/forecast")
+	 (noaa-aval (noaa-aval noaa-last-response 'properties) 'forecast)
+	 ))
+    (setf (alist-get (cons noaa-latitude noaa-longitude)
+		     noaa-forecast-urls
+		     nil nil 'equal)
+	  forecast-url)))
 
 ;; generic callback
 (cl-defun noaa-http-callback--handle-json (&key data _response error-thrown &allow-other-keys)
