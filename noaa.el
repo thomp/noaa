@@ -187,16 +187,21 @@ NUM is a string representation of a floating point number."
   (unless data
     (error "No data returned from openstreetmap.org"))
   (condition-case nil
-    (let* ((result (car (json-parse-string data :object-type 'alist :array-type 'list)))
-           lat lon)
-      (setq lat (noaa--four-digit-precision (cdr (assq 'lat result))))
-      (setq lon (noaa--four-digit-precision (cdr (assq 'lon result))))
-      (setq noaa-latitude  lat
-            noaa-longitude lon))
+      (let* ((result (car (json-parse-string data :object-type 'alist :array-type 'list)))
+             lat lon)
+	(setq lat (noaa--four-digit-precision (cdr (assq 'lat result))))
+	(setq lon (noaa--four-digit-precision (cdr (assq 'lon result))))
+	(setq noaa-latitude  lat
+              noaa-longitude lon))
     (error
-      (error "Failed to retreive coordinates from openstreetmap.org")))
-  (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude nil)
-                     (function noaa-http-callback-daily)))
+     (error "Failed to retreive coordinates from openstreetmap.org")))
+  (noaa-ensure-forecast-url-established
+   (cl-function (lambda (&key data response error-thrown &allow-other-keys)
+		  (noaa-http-callback--establish-forecast-url :data data :response response :error-thrown error-thrown)
+		  (noaa-query-gridpoints-api noaa-latitude
+					     noaa-longitude
+					     (function noaa-http-callback-daily))
+		  ))))
 
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
