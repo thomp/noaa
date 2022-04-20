@@ -422,6 +422,18 @@ buffer based upon them.")
   "Return an integer representing the number of seconds since since 1970-01-01 00:00:00 UTC as indicated by the ISO 8601 time indicated by ISO8601-STRING. For example, invocation with `2018-12-24T18:00:00-08:00' should return 1545703200."
   (string-to-number (format-time-string "%s" (parse-iso8601-time-string iso8601-string))))
 
+(defun noaa-query-gridpoints-api (lat lon callback)
+  "Query the NOAA gridpoints API for forecast data using a cached URL
+and calling callback CALLBACK upon successful completion of the query.
+The cached URL, a member of NOAA-FORECAST-URLS, is referenced by LAT
+and LON values."
+  (let ((forecast-url (cdr (assoc (cons lat lon)
+				  noaa-forecast-urls
+				  'equal))))
+    (if forecast-url
+	(noaa-url-retrieve forecast-url callback)
+      (error "Expected a match in NOAA-FORECAST-URLS"))))
+
 ;;;###autoload
 (defun noaa-quit ()
   "Leave the buffer specified by ‘noaa-buffer-spec’."
