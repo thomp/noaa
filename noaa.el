@@ -427,6 +427,24 @@ buffer based upon them.")
   "Return an integer representing the number of seconds since since 1970-01-01 00:00:00 UTC as indicated by the ISO 8601 time indicated by ISO8601-STRING. For example, invocation with `2018-12-24T18:00:00-08:00' should return 1545703200."
   (string-to-number (format-time-string "%s" (parse-iso8601-time-string iso8601-string))))
 
+(defun noaa-prompt-user-for-location ()
+  (let ((location nil)
+        (latitude nil)
+        (longitude nil))
+    ;; TODO: It would be nice to have a list of locations in order to provide
+    ;;       completion candidates, but that would be a tremendous list.
+    (setq location
+	  (read-string "Location (RET to enter coordinates instead): "))
+    (when (string-blank-p (or location ""))
+      (setq location nil)
+      (setq latitude
+	    (read-number
+	     "Enter latitude (decimal fraction; + north, - south): "))
+      (setq longitude
+	    (read-number
+	     "Enter longitude (decimal fraction; + east, - west): ")))
+    (values location latitude longitude)))
+
 (defun noaa-query-gridpoints-api (lat lon callback)
   "Query the NOAA gridpoints API for forecast data using a cached URL
 and calling callback CALLBACK upon successful completion of the query.
