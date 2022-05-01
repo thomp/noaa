@@ -427,6 +427,31 @@ buffer based upon them.")
   "Return an integer representing the number of seconds since since 1970-01-01 00:00:00 UTC as indicated by the ISO 8601 time indicated by ISO8601-STRING. For example, invocation with `2018-12-24T18:00:00-08:00' should return 1545703200."
   (string-to-number (format-time-string "%s" (parse-iso8601-time-string iso8601-string))))
 
+(defun noaa--once-lat-lon-set (lat lon)
+  "Given latitude LAT and longitude LON, ensure the needed metadata is
+on hand in order to make a request, for forecast data, to the NOAA
+National Weather Service API, then query the NOAA server for the
+actual forecast, and, finally, handle the server response and display
+the corresponding forecast."
+  (let ((g (lambda ()
+	     ;; Anticipate the possibility that the forecast URL was not established
+	     (let ((forecast-url (cdr (assoc (cons lat lon)
+					     noaa-forecast-urls
+					     'equal))))
+	       (if forecast-url
+		   (noaa-url-retrieve forecast-url
+				      (function noaa-http-callback-daily))
+		 (message "NOAA-FORECAST-URLS does not contain a URL for lat,lon pair %s" (list noaa-latitude noaa-longitude)))))))
+    (let ((f (cl-function (lambda (&key data response error-thrown
+					&allow-other-keys)
+			    (setf noaa-last-response data)
+			    (noaa-http-callback--establish-forecast-url :data data
+									:response response
+									:error-thrown error-thrown)
+			    (funcall g)))))
+      (unless (noaa-ensure-forecast-url-established f)
+	(funcall g)))))
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
