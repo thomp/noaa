@@ -546,6 +546,8 @@ buffer as a single argument."
   (noaa-mode))
 
 (defun noaa--get-buffer ()
+  "Switch to, and activate NOAA-MODE in, the buffer specified by
+NOAA-BUFFER-SPEC. Return value undefined."
   (let ((buffer-is-new (buffer-live-p noaa-buffer-spec)))
     (switch-to-buffer (get-buffer-create noaa-buffer-spec))
     (when buffer-is-new
