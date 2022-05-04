@@ -452,6 +452,24 @@ the corresponding forecast."
       (unless (noaa-ensure-forecast-url-established f)
 	(funcall g)))))
 
+(defun noaa-osm-query (location callback)
+  "Execute an OpenStreetMap search query, using LOCATION as the string
+value corresponding to the query Q key. CALLBACK specified the
+function which should be called upon successful completion of the
+query."
+  (request (format noaa--osm-api location)
+    :parser 'buffer-string
+    :error (cl-function
+	    (lambda (&key data error-thrown response symbol-status
+			  &allow-other-keys)
+	      (message "data: %S " data)
+	      (message "symbol-status: %S " symbol-status)
+	      (message "E Error response: %S " error-thrown)
+	      (message "response: %S " response)))
+    :status-code '((500 . (lambda (&rest _)
+			    (message "500: from openstreetmap"))))
+    :success callback))
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
