@@ -582,6 +582,13 @@ buffer as a single argument."
   (noaa-display-last-forecast)
   (noaa-mode))
 
+(cl-defun noaa-http-error-callback (&key data error-thrown response symbol-status
+					 &allow-other-keys)
+  (message "data: %S " data)
+  (message "symbol-status: %S " symbol-status)
+  (message "E Error response: %S " error-thrown)
+  (message "response: %S " response))
+
 (cl-defun noaa-http-callback-hourly (&key data response error-thrown &allow-other-keys)
   (noaa-http-callback :data data :response response :error-thrown error-thrown)
   (setf (noaa-forecast-set-type noaa-last-forecast-set) :hourly)
