@@ -171,6 +171,22 @@ corresponding information from an API of `openstreetmaps.org'."
                                   (function noaa-http-callback-daily)))))
 (defalias 'noaa-daily 'noaa "Retrieve and display the hourly forecast.")
 
+(cl-defun noaa--api-weather-gov--4nn-callback
+    (&key data error-thrown response symbol-status
+	  &allow-other-keys)
+  (let ((result (json-parse-string data :object-type 'alist :array-type 'list)))
+    (setf noaa-last-response result)
+    (let ((title (noaa-aval result 'title))
+	  (detail (noaa-aval result 'detail)))
+      (cond ((and title detail)
+	     (message "%s" title)
+	     (message "%s" detail))
+	    (t
+	     (noaa-http-error-callback :data data
+				       :error-thrown error-thrown
+				       :response response
+				       :symbol-status symbol-status))))))
+
 (defun noaa-new-location ()
   "Get weather for a different location.
 Shortcut for M-x `noaa' with a prefix argument."
