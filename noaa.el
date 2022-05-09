@@ -459,13 +459,7 @@ function which should be called upon successful completion of the
 query."
   (request (format noaa--osm-api location)
     :parser 'buffer-string
-    :error (cl-function
-	    (lambda (&key data error-thrown response symbol-status
-			  &allow-other-keys)
-	      (message "data: %S " data)
-	      (message "symbol-status: %S " symbol-status)
-	      (message "E Error response: %S " error-thrown)
-	      (message "response: %S " response)))
+    :error (function noaa-http-error-callback)
     :status-code '((500 . (lambda (&rest _)
 			    (message "500: from openstreetmap"))))
     :success callback))
@@ -566,13 +560,10 @@ buffer as a single argument."
 	       ("User-Agent" . (string-trim (url-http-user-agent-string)))
 	       )
     :parser 'buffer-string
-    :error (cl-function
-	    (lambda (&key data error-thrown response symbol-status &allow-other-keys)
-	      (message "data: %S " data)
-	      (message "symbol-status: %S " symbol-status)
-	      (message "E Error response: %S " error-thrown)
-	      (message "response: %S " response)))
-    :status-code '((500 . (lambda (&rest _) (message "Got 500 -- the server seems unhappy"))))
+    :error
+    (or http-error-callback
+	(function noaa-noaa-http-error-callback))
+    :status-code http-status-code
     :success http-callback))
 
 (cl-defun noaa-http-callback-daily (&key data response error-thrown &allow-other-keys)
