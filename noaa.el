@@ -6,7 +6,7 @@
 ;; Keywords: calendar
 ;; Homepage: https://github.com/thomp/noaa
 ;; URL: https://github.com/thomp/noaa
-;; Package-Requires: ((emacs "27.1") (request "0.2.0") (dash "2.14.1"))
+;; Package-Requires: ((emacs "27.1") (request "0.2.0"))
 
 ;;; Commentary:
 
@@ -22,7 +22,6 @@
 
 (require 'cl-lib)
 (require 'cl-extra)   ; cl-concatenate
-(require 'dash)
 (require 'json)
 (require 'parse-time) ; parse-iso8601-time-string
 (require 'request)
