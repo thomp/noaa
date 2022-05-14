@@ -495,7 +495,7 @@ query."
       (setq longitude
 	    (read-number
 	     "Enter longitude (decimal fraction; + east, - west): ")))
-    (values location latitude longitude)))
+    (cl-values location latitude longitude)))
 
 (defun noaa-query-gridpoints-api (lat lon callback)
   "Query the NOAA gridpoints API for forecast data using a cached URL
