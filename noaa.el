@@ -170,6 +170,17 @@ corresponding information from an API of `openstreetmaps.org'."
                                   (function noaa-http-callback-daily)))))
 (defalias 'noaa-daily 'noaa "Retrieve and display the hourly forecast.")
 
+(defvar noaa-api-weather-gov--status-map
+  '(
+    (404 . noaa--api-weather-gov--4nn-callback)
+    (500 . (lambda (&rest x)
+	     (message "%S" x)
+	     (message "Got 500 -- the server seems unhappy")))
+    (503 . (lambda (&rest x)
+	     (message "%s" "Service Unavailable (503)")))
+    )
+  "Maps HTTP response status codes to callbacks")
+
 (cl-defun noaa--api-weather-gov--4nn-callback
     (&key data error-thrown response symbol-status
 	  &allow-other-keys)
