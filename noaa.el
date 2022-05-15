@@ -295,12 +295,17 @@ forecast described by the value of NOAA-LAST-FORECAST-SET."
   "Unless the forecast URL is already established for the location
   specified by NOAA-LATITUDE and NOAA-LONGITUDE, query the NOAA API
   for the forecast URL and execute callback CALLBACK upon successful
-  completion of the query."
-  (unless (assoc (cons noaa-latitude noaa-longitude)
+  completion of the query. Return NIL if the forecast URL is already
+  established in NOAA-FORECAST-URLS; otherwise, return a raw HTTP
+  response buffer."
+  (if (and noaa-latitude noaa-longitude)
+      (if (assoc (cons noaa-latitude noaa-longitude)
 		 noaa-forecast-urls
 		 'equal)
-    (noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
-		       callback)))
+	  nil
+	(noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
+			   callback))
+    (error "Set NOAA-LATITUDE and NOAA-LONGITUDE first.")))
 
 (defun noaa-forecast-range (forecast)
   "Return difference, in sec, between earliest start time and latest end time in the set of forecast structs described by FORECAST."
