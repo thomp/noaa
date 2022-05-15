@@ -576,7 +576,10 @@ response associated with a GET request to URL. If URL is NIL, the
 GET request is made to the URL described by `(noaa-url
 noaa-latitude noaa-longitude)'. Call HTTP-CALLBACK with the
 buffer as a single argument."
-  (noaa-url-retrieve-tkf-emacs-request url http-callback))
+  (noaa-url-retrieve-tkf-emacs-request url
+				       http-callback
+				       nil
+				       noaa-api-weather-gov--status-map))
 
 ;; async version relying on tfk emacs-request library
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback http-error-callback http-status-code)
