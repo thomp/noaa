@@ -212,22 +212,24 @@ NUM is a string representation of a floating point number."
 (cl-defun noaa--osm-callback (&key data _response _error-thrown &allow-other-keys)
   (unless data
     (error "No data returned from openstreetmap.org"))
-  (condition-case nil
-      (let* ((result (car (json-parse-string data :object-type 'alist :array-type 'list)))
-             lat lon)
-	(setq lat (noaa--four-digit-precision (cdr (assq 'lat result))))
-	(setq lon (noaa--four-digit-precision (cdr (assq 'lon result))))
-	(setq noaa-latitude  lat
-              noaa-longitude lon))
-    (error
-     (error "Failed to retreive coordinates from openstreetmap.org")))
-  (noaa-ensure-forecast-url-established
-   (cl-function (lambda (&key data response error-thrown &allow-other-keys)
-		  (noaa-http-callback--establish-forecast-url :data data :response response :error-thrown error-thrown)
-		  (noaa-query-gridpoints-api noaa-latitude
-					     noaa-longitude
-					     (function noaa-http-callback-daily))
-		  ))))
+  (let (lat
+	lon
+	(error-msg "Failed to retrieve coordinates from openstreetmap.org"))
+    (condition-case nil
+	(let ((result (car (json-parse-string data
+					      :object-type 'alist
+					      :array-type 'list))))
+	  (setq lat
+		(string-to-number (noaa--four-digit-precision (cdr (assq 'lat result)))))
+	  (setq lon
+		(string-to-number (noaa--four-digit-precision (cdr (assq 'lon result))))))
+      (error
+       (error error-msg)))
+    (cond ((and lat lon)
+	   (setq noaa-latitude  lat
+		 noaa-longitude lon)
+	   (noaa--once-lat-lon-set lat lon))
+	  (t (error error-msg)))))
 
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
