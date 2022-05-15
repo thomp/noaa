@@ -120,54 +120,21 @@ This is a query to a server at `openstreetmap.org' that accepts a
 single location string as a parameter.")
 
 ;;;###autoload
-(defun noaa (&optional location latitude longitude)
-  "Request weather forecast data.
-Display the data in the buffer specified by ‘noaa-buffer-spec’.
-With PREFIX-ARGUMENT, prompts for a particular location. If the
-user enters a blank location, prompts for a latitude and a
-longitude.
-
-The NOAA API itself requires latitude and longitude data. When
-the user opts to enter a location, we attempt to obtain
-corresponding information from an API of `openstreetmaps.org'."
+(defun noaa ()
   (interactive)
-  (when current-prefix-arg
-    ;; TODO: It would be nice to have a list of locations in order to provide
-    ;;       completion candidates, but that would be a tremendous list.
-    (setq location
-      (completing-read "Location (RET to enter coordinates instead): " nil))
-    (when (string-blank-p (or location ""))
-      (setq location nil
-            latitude 91
-            longitude 181)
-      (while (or (> latitude 90) (< latitude -90))
-        (setq latitude
-          (read-number
-            "Enter latitude (decimal fraction; + north, - south): ")))
-      (while (or (> longitude 180) (< longitude -180))
-        (setq longitude
-          (read-number
-            "Enter longitude (decimal fraction; + east, - west): ")))))
-  (cond
-   (location
-     (setq noaa-location location)
-     (request (format noaa--osm-api location)
-       :parser 'buffer-string ;'json-read
-       :error (cl-function
-               (lambda (&key data error-thrown response symbol-status &allow-other-keys)
-                 (message "data: %S " data)
-                 (message "symbol-status: %S " symbol-status)
-                 (message "E Error response: %S " error-thrown)
-                 (message "response: %S " response)))
-       :status-code '((500 . (lambda (&rest _) (message "500: from openstreetmap"))))
-       :success 'noaa--osm-callback))
-   (t
-     (when latitude ; otherwise, use default or prior values
-       (setq noaa-location  (format "%s/%s" latitude longitude)
-             noaa-latitude  (or latitude   noaa-latitude)
-             noaa-longitude (or longitude  noaa-longitude)))
-     (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude nil)
-                                  (function noaa-http-callback-daily)))))
+  (if current-prefix-arg
+      (cl-multiple-value-bind (loc lat lon)
+	  (noaa-prompt-user-for-location)
+	(cond ((not loc)
+	       (setq noaa-latitude  lat
+		     noaa-longitude lon)
+	       (setq noaa-location nil)	; Once responses from queries to points API are handled better, this should be set appropriately
+	       (noaa--once-lat-lon-set lat lon))
+	      (loc
+	       (setq noaa-location loc)
+	       (noaa-osm-query loc
+			       (function noaa--osm-callback)))))
+    (noaa--once-lat-lon-set noaa-latitude noaa-longitude)))
 (defalias 'noaa-daily 'noaa "Retrieve and display the hourly forecast.")
 
 (defvar noaa-api-weather-gov--status-map
