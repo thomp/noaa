@@ -305,9 +305,12 @@ NOAA-LATITUDE and NOAA-LONGITUDE."
 (defun noaa-hourly ()
   "Retrieve and display the hourly forecast."
   (interactive)
-  (noaa-url-retrieve (noaa-url noaa-latitude noaa-longitude t)
-		     (function noaa-http-callback-hourly))
-  (noaa-display-last-forecast))
+  (let ((forecast-url (noaa-forecast-url t)))
+    (if forecast-url
+	(noaa-url-retrieve forecast-url
+			   (function noaa-http-callback-hourly))
+      (message "NOAA-FORECAST-URLS does not contain a URL for lat,lon pair %s"
+	       (list noaa-latitude noaa-longitude)))))
 
 ;; TODO: Make this a defcustom
 (defvar noaa-daily-styles
