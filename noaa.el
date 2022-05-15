@@ -533,16 +533,6 @@ should be numbers."
 	    (setf (elt (noaa-forecast-set-forecasts forecast-set) i)
 		  (make-noaa-forecast :start-time start-time :end-time end-time :day-number day-number :name name :temp temp :detailed-forecast detailed-forecast :short-forecast short-forecast))))))))
 
-(defun noaa-url (&optional latitude longitude hourlyp)
-  "Return a NOAA API HTTP GET request string.
-LATITUDE and LONGITUDE should be numbers. HOURLYP should be
-non-nil for a hourly forecast."
-  (let ((url-string (format "https://api.weather.gov/points/%s,%s/forecast" (or latitude noaa-latitude) (or longitude noaa-longitude))))
-    (when hourlyp
-      (setf url-string
-	    (cl-concatenate 'string url-string "/hourly")))
-    url-string))
-
 (defun noaa-url-retrieve (url &optional http-callback)
   "Return a raw HTTP response buffer.
 This is a buffer containing only the 'raw' body of the HTTP
