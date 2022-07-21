@@ -562,8 +562,8 @@ buffer as a single argument."
 ;; async version relying on tfk emacs-request library
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback http-error-callback http-status-code)
   (request url
-    :headers '(("Upgrade-Insecure-Requests" . "1")
-	       ("User-Agent" . (string-trim (url-http-user-agent-string))))
+    :headers (list '("Upgrade-Insecure-Requests" . "1")
+		   (cons "User-Agent" (string-trim (url-http-user-agent-string))))
     :parser 'buffer-string
     :error
     (or http-error-callback
