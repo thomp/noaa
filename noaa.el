@@ -206,8 +206,8 @@ NUM is a string representation of a floating point number."
       nil)))
 
 (defun noaa-display-last-forecast ()
-  "Clear the buffer specified by NOAA-BUFFER-SPEC and display the
-forecast described by the value of NOAA-LAST-FORECAST-SET."
+  "Clear the buffer and display the forecast described by the value of
+NOAA-LAST-FORECAST-SET."
   (interactive)
   (let ((inhibit-read-only t))
     (erase-buffer)
