@@ -478,6 +478,18 @@ query."
 			    (message "500: from openstreetmap"))))
     :success callback))
 
+;; metadata for an NOAA gridpoint
+(cl-defstruct noaa-point
+  forecast-url				; string - e.g., "https://api.weather.gov/gridpoints/VEF/47,56/forecast"
+  grid-id				; forecast office 3-letter code - e.g., "HNX"
+  grid-x				; integer
+  grid-y				; integer
+  query-lat				; latitude value used with query
+  query-lon				; longitude value used with query
+  relative-location-city			; string
+  relative-location-state 			; string (US two-letter state abbreviation)
+  )
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
