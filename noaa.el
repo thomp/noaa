@@ -507,6 +507,8 @@ query."
    :relative-location-state (kvdotassoc 'properties.relativeLocation.properties.state noaa-last-response)
    ))
 
+(defvar noaa-points nil "A set of noaa-point structs.")
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
