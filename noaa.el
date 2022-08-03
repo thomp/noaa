@@ -490,6 +490,23 @@ query."
   relative-location-state 			; string (US two-letter state abbreviation)
   )
 
+;; make struct from api response
+(defun noaa-point-metadata-from-point-response (json lat lon)
+  "Return a NOAA-POINT-METADATA structure based on data in JSON, the
+parsed response data from the NOAA /gridpoints/{wfo}/{x},{y}/forecast
+API endpoint. LAT and LON are the latitude and longitude used in the
+query."
+  (make-noaa-point
+   :forecast-url (kvdotassoc 'properties.forecast noaa-last-response)
+   :grid-id (kvdotassoc 'properties.gridId noaa-last-response)
+   :grid-x (kvdotassoc 'properties.gridX noaa-last-response)
+   :grid-y (kvdotassoc 'properties.gridY noaa-last-response)
+   :query-lat lat
+   :query-lon lon
+   :relative-location-city (kvdotassoc 'properties.relativeLocation.properties.city noaa-last-response)
+   :relative-location-state (kvdotassoc 'properties.relativeLocation.properties.state noaa-last-response)
+   ))
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
