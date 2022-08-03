@@ -294,13 +294,14 @@ NOAA-LAST-FORECAST-SET."
 (defun noaa-forecast-url (&optional hourlyp)
   "Return, if cached, the forecast URL for the location specified by
 NOAA-LATITUDE and NOAA-LONGITUDE."
-  (let ((forecast-url (cdr (assoc (cons noaa-latitude noaa-longitude)
-				  noaa-forecast-urls
-				  'equal))))
-    (if forecast-url
-	(if hourlyp
-	    (cl-concatenate 'string forecast-url "/hourly")
-	  forecast-url))))
+  (cl-destructuring-bind (found-point i)
+      (noaa-find-point noaa-latitude noaa-longitude)
+    (if found-point
+	(let ((forecast-url (noaa-point-forecast-url found-point)))
+	  (if forecast-url
+	      (if hourlyp
+		  (cl-concatenate 'string forecast-url "/hourly")
+		forecast-url))))))
 
 (defun noaa-hourly ()
   "Retrieve and display the hourly forecast."
