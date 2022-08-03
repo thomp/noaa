@@ -260,20 +260,20 @@ NOAA-LAST-FORECAST-SET."
 		  t)
 		 (t nil))))))))
 
-(defun noaa-ensure-forecast-url-established (callback)
+(defun noaa-unless-point-in-cache (callback)
   "Unless the forecast URL is already established for the location
   specified by NOAA-LATITUDE and NOAA-LONGITUDE, query the NOAA API
   for the forecast URL and execute callback CALLBACK upon successful
   completion of the query. Return NIL if the forecast URL is already
-  established in NOAA-FORECAST-URLS; otherwise, return a raw HTTP
-  response buffer."
+  established in NOAA-POINTS; otherwise, return a raw HTTP response
+  buffer."
   (if (and noaa-latitude noaa-longitude)
-      (if (assoc (cons noaa-latitude noaa-longitude)
-		 noaa-forecast-urls
-		 'equal)
-	  nil
-	(noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
-			   callback))
+      (cl-destructuring-bind (found-point i)
+	  (noaa-find-point noaa-latitude noaa-longitude)
+	(if found-point
+	    nil
+	  (noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
+			     callback)))
     (error "Set NOAA-LATITUDE and NOAA-LONGITUDE first.")))
 
 (defun noaa-forecast-range (forecast)
@@ -294,13 +294,14 @@ NOAA-LAST-FORECAST-SET."
 (defun noaa-forecast-url (&optional hourlyp)
   "Return, if cached, the forecast URL for the location specified by
 NOAA-LATITUDE and NOAA-LONGITUDE."
-  (let ((forecast-url (cdr (assoc (cons noaa-latitude noaa-longitude)
-				  noaa-forecast-urls
-				  'equal))))
-    (if forecast-url
-	(if hourlyp
-	    (cl-concatenate 'string forecast-url "/hourly")
-	  forecast-url))))
+  (cl-destructuring-bind (found-point i)
+      (noaa-find-point noaa-latitude noaa-longitude)
+    (if found-point
+	(let ((forecast-url (noaa-point-forecast-url found-point)))
+	  (if forecast-url
+	      (if hourlyp
+		  (cl-concatenate 'string forecast-url "/hourly")
+		forecast-url))))))
 
 (defun noaa-hourly ()
   "Retrieve and display the hourly forecast."
@@ -449,13 +450,14 @@ actual forecast, and, finally, handle the server response and display
 the corresponding forecast."
   (let ((g (lambda ()
 	     ;; Anticipate the possibility that the forecast URL was not established
-	     (let ((forecast-url (cdr (assoc (cons lat lon)
-					     noaa-forecast-urls
-					     'equal))))
-	       (if forecast-url
-		   (noaa-url-retrieve forecast-url
-				      (function noaa-http-callback-daily))
-		 (message "NOAA-FORECAST-URLS does not contain a URL for lat,lon pair %s" (list noaa-latitude noaa-longitude)))))))
+	     (cl-destructuring-bind (found-point i)
+		 (noaa-find-point lat lon)
+	       (cond (found-point
+		      (setf noaa-last-point-index i)
+		      (noaa-url-retrieve (noaa-point-forecast-url found-point)
+					 (function noaa-http-callback-daily)))
+		     (t
+		      (message "NOAA-POINTS does not contain a URL for lat,lon pair %s" (list noaa-latitude noaa-longitude))))))))
     (let ((f (cl-function (lambda (&key data response error-thrown
 					&allow-other-keys)
 			    (setf noaa-last-response data)
@@ -463,7 +465,7 @@ the corresponding forecast."
 									:response response
 									:error-thrown error-thrown)
 			    (funcall g)))))
-      (unless (noaa-ensure-forecast-url-established f)
+      (unless (noaa-unless-point-in-cache f)
 	(funcall g)))))
 
 (defun noaa-osm-query (location callback)
@@ -477,6 +479,62 @@ query."
     :status-code '((500 . (lambda (&rest _)
 			    (message "500: from openstreetmap"))))
     :success callback))
+
+;; metadata for an NOAA gridpoint
+(cl-defstruct noaa-point
+  forecast-url				; string - e.g., "https://api.weather.gov/gridpoints/VEF/47,56/forecast"
+  grid-id				; forecast office 3-letter code - e.g., "HNX"
+  grid-x				; integer
+  grid-y				; integer
+  query-lat				; latitude value used with query
+  query-lon				; longitude value used with query
+  relative-location-city			; string
+  relative-location-state 			; string (US two-letter state abbreviation)
+  )
+
+;; make struct from api response
+(defun noaa-point-metadata-from-point-response (json lat lon)
+  "Return a NOAA-POINT-METADATA structure based on data in JSON, the
+parsed response data from the NOAA /gridpoints/{wfo}/{x},{y}/forecast
+API endpoint. LAT and LON are the latitude and longitude used in the
+query."
+  (make-noaa-point
+   :forecast-url (kvdotassoc 'properties.forecast noaa-last-response)
+   :grid-id (kvdotassoc 'properties.gridId noaa-last-response)
+   :grid-x (kvdotassoc 'properties.gridX noaa-last-response)
+   :grid-y (kvdotassoc 'properties.gridY noaa-last-response)
+   :query-lat lat
+   :query-lon lon
+   :relative-location-city (kvdotassoc 'properties.relativeLocation.properties.city noaa-last-response)
+   :relative-location-state (kvdotassoc 'properties.relativeLocation.properties.state noaa-last-response)
+   ))
+
+(defvar noaa-points nil "A set of noaa-point structs.")
+
+(defun noaa-find-point (lat lon)
+  "If an NOAA-POINT struct corresponding to LAT and LON is present in
+NOAA-POINTS, return a list where the first member is the point and the
+second member is the index of the point."
+  (let ((i (position-if (lambda (point)
+			  (and (= (noaa-point-query-lat point) lat)
+			       (= (noaa-point-query-lon point) lon)))
+			noaa-points)))
+    (if i
+	(list (elt noaa-points i) i)
+      (list nil nil))))
+
+(defun noaa-points-add-or-update (point)
+  "Ensure the point POINT is present in NOAA-POINTS. Return the index
+of POINT in NOAA-POINTS."
+  (cl-destructuring-bind (found-point i)
+      (noaa-find-point (noaa-point-query-lat point)
+		       (noaa-point-query-lon point))
+    (cond (i
+	   (setf (elt noaa-points i) point))
+	  (point
+	   (push point noaa-points)
+	   (setf i 0)))
+    i))
 
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
@@ -611,18 +669,16 @@ NOAA-BUFFER-SPEC. Return value undefined."
         (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
        (noaa-populate-forecasts periods noaa-last-forecast-set))))
 
-;; handle NOAA API points query and establish the corresponding forecast URL
 (cl-defun noaa-http-callback--establish-forecast-url (&key data _response error-thrown &allow-other-keys)
   (setf noaa-last-response nil)
   (noaa-http-callback--handle-json :data data :_response _response :error-thrown error-thrown)
-  (let ((forecast-url
-	 ;;(json-pointer-get noaa-last-response "/properties/forecast")
-	 (noaa-aval (noaa-aval noaa-last-response 'properties) 'forecast)
-	 ))
-    (setf (alist-get (cons noaa-latitude noaa-longitude)
-		     noaa-forecast-urls
-		     nil nil 'equal)
-	  forecast-url)))
+  ;; Setting POINT establishes forecast URL (forecast-url) and
+  ;; forecast office ID (grid-id)
+  (let ((point (noaa-point-metadata-from-point-response noaa-last-response
+							noaa-latitude
+							noaa-longitude)))
+    (setf noaa-last-point-index
+	  (noaa-points-add-or-update point))))
 
 ;; generic callback
 (cl-defun noaa-http-callback--handle-json (&key data _response error-thrown &allow-other-keys)
