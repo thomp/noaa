@@ -666,18 +666,16 @@ NOAA-BUFFER-SPEC. Return value undefined."
         (setf noaa-last-forecast-set (make-noaa-forecast-set :forecasts nil :type nil)))
        (noaa-populate-forecasts periods noaa-last-forecast-set))))
 
-;; handle NOAA API points query and establish the corresponding forecast URL
 (cl-defun noaa-http-callback--establish-forecast-url (&key data _response error-thrown &allow-other-keys)
   (setf noaa-last-response nil)
   (noaa-http-callback--handle-json :data data :_response _response :error-thrown error-thrown)
-  (let ((forecast-url
-	 ;;(json-pointer-get noaa-last-response "/properties/forecast")
-	 (noaa-aval (noaa-aval noaa-last-response 'properties) 'forecast)
-	 ))
-    (setf (alist-get (cons noaa-latitude noaa-longitude)
-		     noaa-forecast-urls
-		     nil nil 'equal)
-	  forecast-url)))
+  ;; Setting POINT establishes forecast URL (forecast-url) and
+  ;; forecast office ID (grid-id)
+  (let ((point (noaa-point-metadata-from-point-response noaa-last-response
+							noaa-latitude
+							noaa-longitude)))
+    (setf noaa-last-point-index
+	  (noaa-points-add-or-update point))))
 
 ;; generic callback
 (cl-defun noaa-http-callback--handle-json (&key data _response error-thrown &allow-other-keys)
