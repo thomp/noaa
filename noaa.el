@@ -509,6 +509,18 @@ query."
 
 (defvar noaa-points nil "A set of noaa-point structs.")
 
+(defun noaa-find-point (lat lon)
+  "If an NOAA-POINT struct corresponding to LAT and LON is present in
+NOAA-POINTS, return a list where the first member is the point and the
+second member is the index of the point."
+  (let ((i (position-if (lambda (point)
+			  (and (= (noaa-point-query-lat point) lat)
+			       (= (noaa-point-query-lon point) lon)))
+			noaa-points)))
+    (if i
+	(list (elt noaa-points i) i)
+      (list nil nil))))
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
