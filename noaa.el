@@ -6,7 +6,7 @@
 ;; Keywords: calendar
 ;; Homepage: https://github.com/thomp/noaa
 ;; URL: https://github.com/thomp/noaa
-;; Package-Requires: ((emacs "27.1") (request "0.2.0") (s "1.12.0"))
+;; Package-Requires: ((emacs "27.1") (kv "0.0.19") (request "0.2.0") (s "1.12.0"))
 
 ;;; Commentary:
 
