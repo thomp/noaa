@@ -265,15 +265,15 @@ NOAA-LAST-FORECAST-SET."
   specified by NOAA-LATITUDE and NOAA-LONGITUDE, query the NOAA API
   for the forecast URL and execute callback CALLBACK upon successful
   completion of the query. Return NIL if the forecast URL is already
-  established in NOAA-FORECAST-URLS; otherwise, return a raw HTTP
-  response buffer."
+  established in NOAA-POINTS; otherwise, return a raw HTTP response
+  buffer."
   (if (and noaa-latitude noaa-longitude)
-      (if (assoc (cons noaa-latitude noaa-longitude)
-		 noaa-forecast-urls
-		 'equal)
-	  nil
-	(noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
-			   callback))
+      (cl-destructuring-bind (found-point i)
+	  (noaa-find-point noaa-latitude noaa-longitude)
+	(if found-point
+	    nil
+	  (noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
+			     callback)))
     (error "Set NOAA-LATITUDE and NOAA-LONGITUDE first.")))
 
 (defun noaa-forecast-range (forecast)
