@@ -522,6 +522,19 @@ second member is the index of the point."
 	(list (elt noaa-points i) i)
       (list nil nil))))
 
+(defun noaa-points-add-or-update (point)
+  "Ensure the point POINT is present in NOAA-POINTS. Return the index
+of POINT in NOAA-POINTS."
+  (cl-destructuring-bind (found-point i)
+      (noaa-find-point (noaa-point-query-lat point)
+		       (noaa-point-query-lon point))
+    (cond (i
+	   (setf (elt noaa-points i) point))
+	  (point
+	   (push point noaa-points)
+	   (setf i 0)))
+    i))
+
 (defun noaa-prompt-user-for-location ()
   (let ((location nil)
         (latitude nil)
