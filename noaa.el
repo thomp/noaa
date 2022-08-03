@@ -450,11 +450,9 @@ actual forecast, and, finally, handle the server response and display
 the corresponding forecast."
   (let ((g (lambda ()
 	     ;; Anticipate the possibility that the forecast URL was not established
-	     (let ((forecast-url (cdr (assoc (cons lat lon)
-					     noaa-forecast-urls
-					     'equal))))
-	       (if forecast-url
-		   (noaa-url-retrieve forecast-url
+	     (let ((point (elt (noaa-find-point lat lon) 0)))
+	       (if point
+		   (noaa-url-retrieve (noaa-point-forecast-url point)
 				      (function noaa-http-callback-daily))
 		 (message "NOAA-FORECAST-URLS does not contain a URL for lat,lon pair %s" (list noaa-latitude noaa-longitude)))))))
     (let ((f (cl-function (lambda (&key data response error-thrown
