@@ -260,7 +260,7 @@ NOAA-LAST-FORECAST-SET."
 		  t)
 		 (t nil))))))))
 
-(defun noaa-ensure-forecast-url-established (callback)
+(defun noaa-unless-gridpoint-in-cache (callback)
   "Unless the forecast URL is already established for the location
   specified by NOAA-LATITUDE and NOAA-LONGITUDE, query the NOAA API
   for the forecast URL and execute callback CALLBACK upon successful
@@ -465,7 +465,7 @@ the corresponding forecast."
 									:response response
 									:error-thrown error-thrown)
 			    (funcall g)))))
-      (unless (noaa-ensure-forecast-url-established f)
+      (unless (noaa-unless-gridpoint-in-cache f)
 	(funcall g)))))
 
 (defun noaa-osm-query (location callback)
