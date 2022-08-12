@@ -516,10 +516,10 @@ query."
   "If an NOAA-POINT struct corresponding to LAT and LON is present in
 NOAA-POINTS, return a list where the first member is the point and the
 second member is the index of the point."
-  (let ((i (position-if (lambda (point)
-			  (and (= (noaa-point-query-lat point) lat)
-			       (= (noaa-point-query-lon point) lon)))
-			noaa-points)))
+  (let ((i (cl-position-if (lambda (point)
+			     (and (= (noaa-point-query-lat point) lat)
+				  (= (noaa-point-query-lon point) lon)))
+			   noaa-points)))
     (if i
 	(list (elt noaa-points i) i)
       (list nil nil))))
