@@ -275,7 +275,7 @@ NOAA-LAST-FORECAST-SET."
 	    nil
 	  (noaa-url-retrieve (noaa-points-url noaa-latitude noaa-longitude)
 			     callback)))
-    (error "Set NOAA-LATITUDE and NOAA-LONGITUDE first.")))
+    (error "Set NOAA-LATITUDE and NOAA-LONGITUDE first")))
 
 (defun noaa-forecast-range (forecast)
   "Return difference, in sec, between earliest start time and latest end time in the set of forecast structs described by FORECAST."
