@@ -16,6 +16,13 @@ viewing USA forecast data at api.weather.gov.
 
     `(load "/path/to/noaa.el")`
 
+
+## Use
+
+1. Use <kbd>M-x</kbd> `noaa` to invoke `noaa`.
+
+2. When done, use <kbd>q</kbd> to invoke `noaa-quit`.
+
 ### Configure noaa.el
 
 If `calendar-latitude` and `calendar-latitude` are already defined, those values will be used. If they are not defined, ensure `noaa-latitude` and `noaa-longitude` are set to the desired values. For example, one might set them via `ielm` (<kbd>M-x</kbd> `ielm`):
@@ -27,11 +34,6 @@ If `calendar-latitude` and `calendar-latitude` are already defined, those values
 NOAA accepts coordinates as floating point numbers with up to four
 digits of precision (eg. 45.1234).
 
-## Use
-
-1. Use <kbd>M-x</kbd> `noaa` to invoke `noaa`.
-
-2. When done, use <kbd>q</kbd> to invoke `noaa-quit`.
 
 ### Additional notes on use
 
@@ -51,6 +53,8 @@ digits of precision (eg. 45.1234).
 
   - <kbd>q</kbd> to quit
 
+
+
 ## Customization
 
 The default forecast presentation styles don't present *all* of the
@@ -58,6 +62,8 @@ possible data available from NOAA. You can customize the styles to
 suit your needs by modifying variables `noaa-daily-styles` and
 `noaa-hourly-styles` with reference to the NOAA api. Two useful
 reference URLs are indicated in the source code.
+
+
 
 ## License
 
