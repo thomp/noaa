@@ -140,6 +140,7 @@ single location string as a parameter.")
 
 (defvar noaa-api-weather-gov--status-map
   '(
+    (403 . noaa--api-weather-gov--4nn-callback)
     (404 . noaa--api-weather-gov--4nn-callback)
     (500 . (lambda (&rest x)
 	     (message "%S" x)
