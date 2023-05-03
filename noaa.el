@@ -622,7 +622,7 @@ buffer as a single argument."
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback http-error-callback http-status-code)
   (request url
     :headers (list '("Upgrade-Insecure-Requests" . "1")
-		   (cons "User-Agent" (string-trim (url-http-user-agent-string))))
+		   (cons "User-Agent" "noaa.el/v1.0 (https://github.com/thomp/noaa)"))
     :parser 'buffer-string
     :error
     (or http-error-callback
