@@ -28,7 +28,6 @@
 (require 's)          ; s-truncate
 (require 'solar)      ; calendar-latitude, calendar-longitude
 (require 'subr-x)     ; string-blank-p
-(require 'url-http)   ; url-http-user-agent-string
 
 (defgroup noaa ()
   "View an NOAA weather forecast for a specific geographic location."
