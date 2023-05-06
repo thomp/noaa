@@ -152,7 +152,7 @@ single location string as a parameter.")
 (cl-defun noaa--api-weather-gov--4nn-callback
     (&key data error-thrown response symbol-status
 	  &allow-other-keys)
-  (let ((result (json-parse-string data :object-type 'alist :array-type 'list)))
+  (let ((result ((elt (json-read-from-string data) 0))))
     (setf noaa-last-response result)
     (let ((title (noaa-aval result 'title))
 	  (detail (noaa-aval result 'detail)))
@@ -184,10 +184,12 @@ NUM is a string representation of a floating point number."
 	lon
 	(error-msg "Failed to retrieve coordinates from openstreetmap.org"))
     (condition-case nil
-	(let ((result (car (json-parse-string data
-					      :object-type 'alist
-					      :array-type 'list))))
-	  (setq lat
+        (progn
+          (setq result (elt (json-read-from-string data
+                                                   :object-type 'alist
+                                                   :array-type 'list)
+                            0))
+          (setq lat
 		(string-to-number (noaa--four-digit-precision (cdr (assq 'lat result)))))
 	  (setq lon
 		(string-to-number (noaa--four-digit-precision (cdr (assq 'lon result))))))
