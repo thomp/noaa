@@ -182,7 +182,8 @@ NUM is a string representation of a floating point number."
     (error "No data returned from openstreetmap.org"))
   (let (lat
 	lon
-	(error-msg "Failed to retrieve coordinates from openstreetmap.org"))
+	(error-msg "Failed to retrieve coordinates from openstreetmap.org")
+        result)
     (condition-case nil
         (progn
           (setq result (elt (json-read-from-string data
