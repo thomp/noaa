@@ -131,7 +131,6 @@ single location string as a parameter.")
 	       (setq noaa-location nil)	; Once responses from queries to points API are handled better, this should be set appropriately
 	       (noaa--once-lat-lon-set lat lon))
 	      (loc
-	       (setq noaa-location loc)
 	       (noaa-osm-query loc
 			       (function noaa--osm-callback)))))
     (noaa--once-lat-lon-set noaa-latitude noaa-longitude)))
@@ -199,6 +198,9 @@ NUM is a string representation of a floating point number."
     (cond ((and lat lon)
 	   (setq noaa-latitude  lat
 		 noaa-longitude lon)
+           ;; only set NOAA-LOCATION after successful query
+           (setq noaa-location
+                 (cdr (assq 'display_name (elt (json-read-from-string result) 0))))
 	   (noaa--once-lat-lon-set lat lon))
 	  (t (error error-msg)))))
 
