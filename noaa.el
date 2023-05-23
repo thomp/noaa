@@ -53,6 +53,9 @@
 (defvar noaa-buffer-spec "*noaa.el*"
   "Buffer or buffer name.")
 
+(defvar noaa-error-buffer-spec "*noaa error*"
+  "Buffer or buffer name.")
+
 (defvar noaa-header-line
   (format "%%s (style: %%s) (%s)ext-style, (%s)ourly, (%s)aily, (%s)hange location, (%s)uit"
           (propertize "n" 'face 'bold)
