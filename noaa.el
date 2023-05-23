@@ -28,7 +28,6 @@
 (require 's)          ; s-truncate
 (require 'solar)      ; calendar-latitude, calendar-longitude
 (require 'subr-x)     ; string-blank-p
-(require 'url-http)   ; url-http-user-agent-string
 
 (defgroup noaa ()
   "View an NOAA weather forecast for a specific geographic location."
@@ -52,6 +51,9 @@
   :type 'number)
 
 (defvar noaa-buffer-spec "*noaa.el*"
+  "Buffer or buffer name.")
+
+(defvar noaa-error-buffer-spec "*noaa error*"
   "Buffer or buffer name.")
 
 (defvar noaa-header-line
@@ -132,7 +134,6 @@ single location string as a parameter.")
 	       (setq noaa-location nil)	; Once responses from queries to points API are handled better, this should be set appropriately
 	       (noaa--once-lat-lon-set lat lon))
 	      (loc
-	       (setq noaa-location loc)
 	       (noaa-osm-query loc
 			       (function noaa--osm-callback)))))
     (noaa--once-lat-lon-set noaa-latitude noaa-longitude)))
@@ -140,6 +141,7 @@ single location string as a parameter.")
 
 (defvar noaa-api-weather-gov--status-map
   '(
+    (403 . noaa--api-weather-gov--4nn-callback)
     (404 . noaa--api-weather-gov--4nn-callback)
     (500 . (lambda (&rest x)
 	     (message "%S" x)
@@ -152,13 +154,14 @@ single location string as a parameter.")
 (cl-defun noaa--api-weather-gov--4nn-callback
     (&key data error-thrown response symbol-status
 	  &allow-other-keys)
-  (let ((result (json-parse-string data :object-type 'alist :array-type 'list)))
+  (let ((result ((elt (json-read-from-string data) 0))))
     (setf noaa-last-response result)
     (let ((title (noaa-aval result 'title))
 	  (detail (noaa-aval result 'detail)))
       (cond ((and title detail)
-	     (message "%s" title)
-	     (message "%s" detail))
+             (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+             (insert (format "title: %s" title))
+             (insert (format "detail: %s" detail)))
 	    (t
 	     (noaa-http-error-callback :data data
 				       :error-thrown error-thrown
@@ -182,22 +185,33 @@ NUM is a string representation of a floating point number."
     (error "No data returned from openstreetmap.org"))
   (let (lat
 	lon
-	(error-msg "Failed to retrieve coordinates from openstreetmap.org"))
+	(error-msg "Failed to retrieve coordinates from openstreetmap.org")
+        result)
     (condition-case nil
-	(let ((result (car (json-parse-string data
-					      :object-type 'alist
-					      :array-type 'list))))
-	  (setq lat
+        (progn
+          (setq result (elt (json-read-from-string data
+                                                   :object-type 'alist
+                                                   :array-type 'list)
+                            0))
+          (setq lat
 		(string-to-number (noaa--four-digit-precision (cdr (assq 'lat result)))))
 	  (setq lon
 		(string-to-number (noaa--four-digit-precision (cdr (assq 'lon result))))))
       (error
-       (error error-msg)))
+       (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+       (insert ?\n ?1 error-msg)
+       (insert ?\n data)
+       (insert ?\n result)))
     (cond ((and lat lon)
 	   (setq noaa-latitude  lat
 		 noaa-longitude lon)
+           ;; only set NOAA-LOCATION after successful query
+           (setq noaa-location
+                 (cdr (assq 'display_name (elt (json-read-from-string result) 0))))
 	   (noaa--once-lat-lon-set lat lon))
-	  (t (error error-msg)))))
+          (t
+           (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+           (insert ?\n ?2 error-msg)))))
 
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
@@ -622,7 +636,7 @@ buffer as a single argument."
 (defun noaa-url-retrieve-tkf-emacs-request (&optional url http-callback http-error-callback http-status-code)
   (request url
     :headers (list '("Upgrade-Insecure-Requests" . "1")
-		   (cons "User-Agent" (string-trim (url-http-user-agent-string))))
+		   (cons "User-Agent" "noaa.el/v1.0 (https://github.com/thomp/noaa)"))
     :parser 'buffer-string
     :error
     (or http-error-callback
@@ -638,11 +652,12 @@ buffer as a single argument."
   (noaa-mode))
 
 (cl-defun noaa-http-error-callback (&key data error-thrown response symbol-status
-					 &allow-other-keys)
-  (message "data: %S " data)
-  (message "symbol-status: %S " symbol-status)
-  (message "E Error response: %S " error-thrown)
-  (message "response: %S " response))
+                                         &allow-other-keys)
+  (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+  (insert (format "data: %S " data))
+  (insert (format "symbol-status: %S " symbol-status))
+  (insert (format "E Error response: %S " error-thrown))
+  (insert (format "response: %S " response)))
 
 (cl-defun noaa-http-callback-hourly (&key data response error-thrown &allow-other-keys)
   (noaa-http-callback :data data :response response :error-thrown error-thrown)
