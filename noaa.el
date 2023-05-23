@@ -159,8 +159,9 @@ single location string as a parameter.")
     (let ((title (noaa-aval result 'title))
 	  (detail (noaa-aval result 'detail)))
       (cond ((and title detail)
-	     (message "%s" title)
-	     (message "%s" detail))
+             (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+             (insert (format "title: %s" title))
+             (insert (format "detail: %s" detail)))
 	    (t
 	     (noaa-http-error-callback :data data
 				       :error-thrown error-thrown
@@ -197,7 +198,10 @@ NUM is a string representation of a floating point number."
 	  (setq lon
 		(string-to-number (noaa--four-digit-precision (cdr (assq 'lon result))))))
       (error
-       (error error-msg)))
+       (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+       (insert ?\n ?1 error-msg)
+       (insert ?\n data)
+       (insert ?\n result)))
     (cond ((and lat lon)
 	   (setq noaa-latitude  lat
 		 noaa-longitude lon)
@@ -646,11 +650,12 @@ buffer as a single argument."
   (noaa-mode))
 
 (cl-defun noaa-http-error-callback (&key data error-thrown response symbol-status
-					 &allow-other-keys)
-  (message "data: %S " data)
-  (message "symbol-status: %S " symbol-status)
-  (message "E Error response: %S " error-thrown)
-  (message "response: %S " response))
+                                         &allow-other-keys)
+  (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+  (insert (format "data: %S " data))
+  (insert (format "symbol-status: %S " symbol-status))
+  (insert (format "E Error response: %S " error-thrown))
+  (insert (format "response: %S " response)))
 
 (cl-defun noaa-http-callback-hourly (&key data response error-thrown &allow-other-keys)
   (noaa-http-callback :data data :response response :error-thrown error-thrown)
