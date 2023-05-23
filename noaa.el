@@ -209,7 +209,9 @@ NUM is a string representation of a floating point number."
            (setq noaa-location
                  (cdr (assq 'display_name (elt (json-read-from-string result) 0))))
 	   (noaa--once-lat-lon-set lat lon))
-	  (t (error error-msg)))))
+          (t
+           (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
+           (insert ?\n ?2 error-msg)))))
 
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
