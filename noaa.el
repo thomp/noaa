@@ -189,9 +189,7 @@ NUM is a string representation of a floating point number."
         result)
     (condition-case nil
         (progn
-          (setq result (elt (json-read-from-string data
-                                                   :object-type 'alist
-                                                   :array-type 'list)
+          (setq result (elt (json-read-from-string data)
                             0))
           (setq lat
 		(string-to-number (noaa--four-digit-precision (cdr (assq 'lat result)))))
