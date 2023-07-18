@@ -489,11 +489,11 @@ the corresponding forecast."
 value corresponding to the query Q key. CALLBACK specified the
 function which should be called upon successful completion of the
 query."
-  (request (format noaa--osm-api location)
+  (request (noaa-osm-make-uri location)
     :parser 'buffer-string
     :error (function noaa-http-error-callback)
     :status-code '((500 . (lambda (&rest _)
-			    (message "500: from openstreetmap"))))
+                            (message "500: from openstreetmap"))))
     :success callback))
 
 ;; metadata for an NOAA gridpoint
