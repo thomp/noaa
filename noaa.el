@@ -147,14 +147,17 @@ and account for two possible strings: location and display-style.")
 (cl-defun noaa--api-weather-gov--4nn-callback
     (&key data error-thrown response symbol-status
 	  &allow-other-keys)
-  (let ((result ((elt (json-read-from-string data) 0))))
+  (let ((result (json-read-from-string data)))
     (setf noaa-last-response result)
     (let ((title (noaa-aval result 'title))
 	  (detail (noaa-aval result 'detail)))
       (cond ((and title detail)
              (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
-             (insert (format "title: %s" title))
-             (insert (format "detail: %s" detail)))
+             (erase-buffer)
+             (insert (format "title:  %s" title) ?\n)
+             (insert (format "detail: %s" detail) ?\n ?\n)
+             (insert data)
+             )
 	    (t
 	     (noaa-http-error-callback :data data
 				       :error-thrown error-thrown
