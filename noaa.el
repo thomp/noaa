@@ -480,6 +480,10 @@ the corresponding forecast."
       (unless (noaa-unless-point-in-cache f)
 	(funcall g)))))
 
+(defun noaa-osm-make-uri (location)
+  (let ((osm-api "https://nominatim.openstreetmap.org/search?q=%s&limit=1&format=json"))
+    (format noaa--osm-api (url-encode-url location))))
+
 (defun noaa-osm-query (location callback)
   "Execute an OpenStreetMap search query, using LOCATION as the string
 value corresponding to the query Q key. CALLBACK specified the
