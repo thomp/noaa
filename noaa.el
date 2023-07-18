@@ -115,12 +115,6 @@ and account for two possible strings: location and display-style.")
 (defvar noaa-last-response nil
   "Last response from the NOAA API.")
 
-(defvar noaa--osm-api
-  "https://nominatim.openstreetmap.org/search?q=%s&limit=1&format=json"
-  "Query format to retreive latitude and longitude data.
-This is a query to a server at `openstreetmap.org' that accepts a
-single location string as a parameter.")
-
 ;;;###autoload
 (defun noaa ()
   (interactive)
