@@ -22,6 +22,7 @@
 (require 'cl-lib)
 (require 'cl-extra)   ; cl-concatenate
 (require 'json)
+(require 'kv)
 (require 'parse-time) ; parse-iso8601-time-string
 (require 'request)
 (require 's)          ; s-truncate
