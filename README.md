@@ -1,6 +1,6 @@
 # noaa.el
 
-<2024-02-11> Archived & moved to codeberg.org.
+<2024-02-11> Archived & moved to codeberg.org. https://codeberg.org/thomp/noaa
 
 *View a simple summary of an NOAA weather forecast*
 
